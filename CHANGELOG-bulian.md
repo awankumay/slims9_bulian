@@ -49,7 +49,8 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 - Query `GROUP BY` kompatibel dengan `ONLY_FULL_GROUP_BY`.
 
 ### Kompatibilitas PHP 8.4
-- Barcode EAN-13, EAN-8, EAN-5, UPC-A, UPC-E, Code25, dan Identcode (plugin label barcode) serta validator ISBN Zend bisa dimuat lagi di PHP 8.
+- Objek barcode Zend EAN-13, EAN-8, EAN-5, UPC-A, UPC-E, Code25, dan Identcode serta validator ISBN bisa dimuat lagi di PHP 8. Plugin label barcode (Code128) tidak lagi memunculkan deprecation `imagefilledpolygon()`.
+- Konstanta `E_STRICT` (deprecated di PHP 8.4) tidak lagi dipakai di `lib/Error.php`.
 - Tidak ada deprecation PHP 8.4 di kode milik SLiMS.
 
 ### Lain-lain
