@@ -25,6 +25,8 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 - Validasi CSRF:
   - Halaman Loan History Maintenance kini memakai POST dengan token CSRF.
   - Token CSRF OPAC juga diterima lewat header dan POST.
+  - Aksi area member yang mengubah data (tambah/hapus bookmark, tambah/hapus/kosongkan keranjang, kirim reservasi, ganti sandi) kini memvalidasi token CSRF per-sesi. Token dikirim otomatis lewat header `X-SLiMS-Member-CSRF` pada setiap AJAX member dan sebagai field tersembunyi pada form. Penghapusan keranjang lewat GET (`rm_biblio`) kini juga butuh token sehingga tidak bisa dipicu lewat navigasi lintas situs.
+- Endpoint API statistik agregat (`biblio/total/all`, `item/total/*`, `loan/summary`, `loan/getdate`, `loan/summary/[tanggal]`) kini mewajibkan sesi staf login dan menolak pemanggil anonim (HTTP 403). Dashboard admin membaca angka-angka tersebut langsung di server, sehingga tampilan tidak berubah sementara jumlah koleksi/item/sirkulasi tidak lagi bisa diambil tanpa autentikasi.
 - Cookie sesi memakai `HttpOnly` dan `SameSite=Lax`.
 - Halaman Environment Setting menulis `env.php` dengan aman.
 - `unserialize()` tidak lagi membuat objek dari data tersimpan.
@@ -64,6 +66,5 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 - File contoh `js/quaggaJS/server.pem` dan `simple-https-server.py` dihapus.
 
 ### Batasan yang diketahui
-- Aksi member area (reservasi, keranjang, bookmark) belum memakai token CSRF. Cookie `SameSite=Lax` sudah memitigasi serangan dari browser modern.
 - Folder `install/` dihapus dari image Docker, sehingga upgrade skema dari SLiMS lama (≤ 9.7) harus lewat instalasi native atau menjalankan installer secara manual.
 - Library `lib/` lain (Symfony 5.x, Carbon, gettext) masih memunculkan deprecation PHP 8.4. Statusnya hanya peringatan dan disembunyikan di mode production.
