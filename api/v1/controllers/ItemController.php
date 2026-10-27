@@ -20,27 +20,45 @@ class ItemController extends Controller
         $this->db = $obj_db;
     }
 
-    public function getTotalAll()
+    public function getTotalAllData()
     {
         $query = $this->db->query("SELECT COUNT(item_id) FROM item");
+        return ($query->fetch_row())[0];
+    }
+
+    public function getTotalLentData()
+    {
+        $query = $this->db->query("SELECT COUNT(loan_id) FROM loan WHERE is_lent=1 AND is_return=0");
+        return ($query->fetch_row())[0];
+    }
+
+    public function getTotalAvailableData()
+    {
+        $query = $this->db->query("SELECT (SELECT COUNT(item_id) FROM item) - (SELECT COUNT(loan_id) FROM loan WHERE is_lent=1 AND is_return=0) AS 'available'");
+        return ($query->fetch_row())[0];
+    }
+
+    public function getTotalAll()
+    {
+        parent::requireStaff();
         parent::withJson([
-            'data' => ($query->fetch_row())[0]
+            'data' => $this->getTotalAllData()
         ]);
     }
 
     public function getTotalLent()
     {
-        $query = $this->db->query("SELECT COUNT(loan_id) FROM loan WHERE is_lent=1 AND is_return=0");
+        parent::requireStaff();
         parent::withJson([
-            'data' => ($query->fetch_row())[0]
+            'data' => $this->getTotalLentData()
         ]);
     }
 
     public function getTotalAvailable()
     {
-        $query = $this->db->query("SELECT (SELECT COUNT(item_id) FROM item) - (SELECT COUNT(loan_id) FROM loan WHERE is_lent=1 AND is_return=0) AS 'available'");
+        parent::requireStaff();
         parent::withJson([
-            'data' => ($query->fetch_row())[0]
+            'data' => $this->getTotalAvailableData()
         ]);
     }
 }

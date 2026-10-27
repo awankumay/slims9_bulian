@@ -99,11 +99,17 @@ class BiblioController extends Controller
         parent::withJson($return);
     }
 
-    public function getTotalAll()
+    public function getTotalAllData()
     {
         $query = $this->db->query("SELECT COUNT(biblio_id) FROM biblio WHERE opac_hide < 1");
+        return ($query->fetch_row())[0];
+    }
+
+    public function getTotalAll()
+    {
+        parent::requireStaff();
         parent::withJson([
-            'data' => ($query->fetch_row())[0]
+            'data' => $this->getTotalAllData()
         ]);
     }
 

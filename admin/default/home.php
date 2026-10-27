@@ -178,6 +178,28 @@ if (basename($_SERVER['PHP_SELF']) == basename(__FILE__)) {
             }
         } else {
         $start_date = date('Y-m-d');
+
+        // Read dashboard statistics server-side instead of calling the public
+        // OPAC API endpoints. Those endpoints run in the OPAC (public) context
+        // where no staff session exists, so they are now guarded and refuse
+        // anonymous callers; computing the figures here keeps the dashboard
+        // working while the aggregate counts are no longer exposed publicly.
+        require_once SB.'api/v1/controllers/Controller.php';
+        require_once SB.'api/v1/controllers/BiblioController.php';
+        require_once SB.'api/v1/controllers/ItemController.php';
+        require_once SB.'api/v1/controllers/LoanController.php';
+        $dashboard_biblio = new BiblioController($sysconf, $dbs);
+        $dashboard_item = new ItemController($sysconf, $dbs);
+        $dashboard_loan = new LoanController($sysconf, $dbs);
+        $dashboard_stats = [
+            'biblio_total_all' => $dashboard_biblio->getTotalAllData(),
+            'item_total_all' => $dashboard_item->getTotalAllData(),
+            'item_total_lent' => $dashboard_item->getTotalLentData(),
+            'item_total_available' => $dashboard_item->getTotalAvailableData(),
+            'loan_summary' => $dashboard_loan->getSummaryData(),
+            'loan_date' => $dashboard_loan->getDate($start_date, false),
+            'loan_summary_date' => $dashboard_loan->getSummaryDateData($start_date),
+        ];
         ?>
         <div class="row">
             <div class="col-xs-6 col-md-3 col-lg-3">
@@ -282,22 +304,23 @@ if (basename($_SERVER['PHP_SELF']) == basename(__FILE__)) {
             
         $(function () {
 
-            async function getTotal(url, selector = null) {
-                if(selector !== null) $(selector).text('...');
-                let res = await (await fetch(url,{headers: {'SLiMS-Http-Cache': 'cache'}})).json();
-                if(selector !== null) $(selector).text(new Intl.NumberFormat('id-ID').format(res.data));
-                return res.data;
+            // Dashboard figures are rendered server-side (see home.php) and
+            // injected here, so the dashboard no longer depends on the public
+            // OPAC API endpoints.
+            const dashboardStats = <?= json_encode($dashboard_stats) ?>;
+
+            function fmt(value) {
+                return new Intl.NumberFormat('id-ID').format(value);
             }
 
-            getTotal('<?= SWB ?>index.php?p=api/biblio/total/all', '.biblio_total_all');
-            getTotal('<?= SWB ?>index.php?p=api/item/total/all', '.item_total_all');
-            getTotal('<?= SWB ?>index.php?p=api/item/total/lent', '.item_total_lent');
-            getTotal('<?= SWB ?>index.php?p=api/item/total/available', '.item_total_available');
+            $('.biblio_total_all').text(fmt(dashboardStats.biblio_total_all));
+            $('.item_total_all').text(fmt(dashboardStats.item_total_all));
+            $('.item_total_lent').text(fmt(dashboardStats.item_total_lent));
+            $('.item_total_available').text(fmt(dashboardStats.item_total_available));
 
             // get summary
-            fetch('<?= SWB ?>index.php?p=api/loan/summary', {headers: {'SLiMS-Http-Cache': 'cache'}})
-                .then(res => res.json())
-                .then(res => {
+            (function (res) {
+                res = {data: dashboardStats.loan_summary};
 
                     $('.loan_total').text(new Intl.NumberFormat('id-ID').format(res.data.total));
                     $('.loan_new').text(new Intl.NumberFormat('id-ID').format(res.data.new));
@@ -350,18 +373,17 @@ if (basename($_SERVER['PHP_SELF']) == basename(__FILE__)) {
                     }
 
                     respondCanvas()
-                });
+            })();
 
             // ===================================
             // bar chart
             // ===================================
 
-            fetch('<?= SWB ?>index.php?p=api/loan/getdate/<?= $start_date ?>', {headers: {'SLiMS-Http-Cache': 'cache'}})
-            .then(res => res.json())
-            .then(res => {
+            (function (res) {
+                res = dashboardStats.loan_date;
 
-                let a = getTotal('<?= SWB ?>index.php?p=api/loan/summary/<?= $start_date ?>');
-                a.then(res_total => {
+                (function (res_total) {
+                    res_total = dashboardStats.loan_summary_date;
 
                     let lineChartData = {
                         labels: res.raw,
@@ -405,8 +427,8 @@ if (basename($_SERVER['PHP_SELF']) == basename(__FILE__)) {
                     }
 
                     respondCanvas();
-                })
-            })
+                })();
+            })();
         });
 
         <?php if (utility::havePrivilege('system', 'r') && utility::havePrivilege('system', 'w')): ?>
