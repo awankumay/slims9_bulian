@@ -39,6 +39,7 @@ tools/test/lint.sh php:8.4.27-cli-bookworm
 - hardening: `session.upload_progress.enabled=0`, header `X-Content-Type-Options: nosniff`, tanpa `X-Powered-By`, `Server: Apache` tanpa versi;
 - paparan file: `composer.*`, `vendor/`, `config/`, `.env`, `*.pem`, `*.py`, `*.md`, `install/` tidak tersaji, dan file PHP di `files/`/`images/` tidak dieksekusi;
 - smoke test 176 URL (OPAC, API, dan semua halaman admin);
+- cek library: export XLSX, kirim email SMTP (ke SMTP sink lokal), HTTP client Guzzle, PDF mPDF + FPDI, barcode Zend;
 - persistensi setelah restart dan recreate.
 
 Hasil tersimpan di `tools/test/out/<versi>/` (diabaikan git). Kode keluar = jumlah pemeriksaan yang gagal. Opsi `--keep` membiarkan stack tetap hidup untuk diperiksa manual, dan `APP_ENV=development` menampilkan detail error PHP.
