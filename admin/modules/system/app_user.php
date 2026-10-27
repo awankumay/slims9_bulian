@@ -141,7 +141,7 @@ if (isset($_POST['saveData'])) { //echo '<pre>'; var_dump($_SESSION); echo '</pr
         toastr(__('Login username or Real Name is probihited!'))->error();
         exit();
     } else if ($sysconf['password_policy_strong'] && ($passwd1 AND $passwd2) && ($passwd1 === $passwd2) && !simbio_security::validatePassword($passwd2, $sysconf['password_policy_min_length'])) {
-        toastr(__( sprintf('Password should at least %d characters long, contains one capital letter, one number, and one non-alphanumeric character !', $sysconf['password_policy_min_length']) ))->error();
+        toastr(sprintf(__('Password should at least %d characters long, contains one capital letter, one number, and one non-alphanumeric character !'), $sysconf['password_policy_min_length']) )->error();
         exit();
     } else if (($passwd1 AND $passwd2) AND ($passwd1 !== $passwd2)) {
         toastr(__('Password confirmation does not match. See if your Caps Lock key is on!'))->error();
@@ -219,19 +219,14 @@ if (isset($_POST['saveData'])) { //echo '<pre>'; var_dump($_SESSION); echo '</pr
         if (!empty($base64_data)) {
             $base64_data = trim($base64_data);
             $filedata = base64_decode($base64_data, true);
+            
             $fileinfo = $filedata !== false ? @getimagesizefromstring($filedata) : false;
-            $fileMime = $fileinfo ? ($fileinfo['mime'] ?? '') : '';
-            $file_extension = $fileinfo ? ltrim(strtolower(image_type_to_extension($fileinfo[2], false)), '.') : strtolower($file_extension);
-            $file_extension = $fileMime && !$file_extension && strpos($fileMime, 'image/') === 0 ? substr($fileMime, 6) : $file_extension;
-            $fileMimeLower = strtolower($fileMime);
-
             $fileSizeOkay = $filedata !== false && (strlen($filedata) <= ($sysconf['max_image_upload'] * 1024));
-            $allowedMimes = array_map('strtolower', (array)$sysconf['allowed_images_mimetype']);
-            $allowedExts = array_map('strtolower', (array)$sysconf['allowed_images']);
-            $mimeAllowed = $fileMime && in_array($fileMimeLower, $allowedMimes, true);
-            $extAllowed = $file_extension && in_array($file_extension, $allowedExts, true);
-            $valid = $fileinfo && $fileSizeOkay && $mimeAllowed && $extAllowed;
+            $valid = $fileinfo !== false && $fileSizeOkay && in_array($fileinfo[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF]);
+            
+            $file_extension = $fileinfo ? image_type_to_extension($fileinfo[2], false) : 'jpg';
             $new_filename = $new_filename_base.'.'.$file_extension;
+            
             if ($valid) {
                 $imageDisk->put('persons/'.$new_filename, $filedata);
                 if ($imageDisk->isExists('persons/'.$new_filename)) {
@@ -243,7 +238,7 @@ if (isset($_POST['saveData'])) { //echo '<pre>'; var_dump($_SESSION); echo '</pr
                     $upload_status = UPLOAD_SUCCESS;
                 }
             } else {
-                utility::jsToastr('System User', __('Image Uploaded Failed').'<br/>'.__('Cropped image data is invalid, uses disallowed type, or exceeds max size.'), 'error');
+                utility::jsToastr('System User', __('Image Uploaded Failed').'<br/>'.__('Invalid image file or exceeds max size.'), 'error');
             }
         }
         elseif (!empty($_FILES['image']) AND $_FILES['image']['size']) {
@@ -555,7 +550,8 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     // Two Factor Authentication
     if (!empty($rec_d) && $rec_d['user_id'] === $_SESSION['uid'] && extension_loaded('iconv')) {
         $otp = OTPHP\TOTP::generate();
-        $otp->setLabel(config('library_name'));
+        $libraryName = str_replace(':', '', config('library_name'));
+        $otp->setLabel($libraryName);
         $secret = $otp->getSecret();
         // generate qrcode
         $render = new BaconQrCode\Renderer\ImageRenderer(

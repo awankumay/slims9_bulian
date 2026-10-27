@@ -374,9 +374,9 @@ class Zend_Barcode_Renderer_Image extends Zend_Barcode_Renderer_RendererAbstract
         );
 
         if ($filled) {
-            imagefilledpolygon($this->_resource, $newPoints, 4, $allocatedColor);
+            imagefilledpolygon($this->_resource, $newPoints, $allocatedColor);
         } else {
-            imagepolygon($this->_resource, $newPoints, 4, $allocatedColor);
+            imagepolygon($this->_resource, $newPoints, $allocatedColor);
         }
     }
 

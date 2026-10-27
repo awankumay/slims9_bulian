@@ -10,7 +10,8 @@
 #
 # It starts a throwaway compose project with sample data, then checks the fresh
 # install, the admin login, runtime hardening, file exposure, a 176-URL smoke
-# test, and persistence across restart and recreate. Output goes to
+# test, library checks (XLSX, SMTP, HTTP client, PDF, barcode) and persistence
+# across restart and recreate. Output goes to
 # tools/test/out/<tag>/. Exit code is the number of failed checks.
 set -u
 
@@ -112,6 +113,16 @@ echo "-- smoke (176 URLs)"
 echo "      http codes: $(awk -F'|' '{print $1}' "$OUT/smoke.txt" | sort | uniq -c | tr -s ' ' | tr '\n' ' ')"
 echo "      details: $OUT/smoke.txt"
 check "smoke URLs checked" "$(wc -l < "$OUT/smoke.txt" | tr -d ' ')" 176
+
+echo "-- libraries (XLSX, SMTP, HTTP client, PDF, barcode)"
+SLIMS_CID=$(dc ps -q slims)
+docker cp "$TESTDIR/lib-check.php" "$SLIMS_CID:/tmp/lib-check.php" >/dev/null
+docker cp "$TESTDIR/smtp-sink.php" "$SLIMS_CID:/tmp/smtp-sink.php" >/dev/null
+dc exec -T -d slims php /tmp/smtp-sink.php; sleep 1
+dc exec -T slims php /tmp/lib-check.php > "$OUT/lib-check.txt" 2>&1
+grep -E "^(PASS|FAIL)" "$OUT/lib-check.txt" | sed 's/^/      /'
+check "library checks" "$(grep -c '^FAIL' "$OUT/lib-check.txt")" 0
+dc exec -T slims rm -f /tmp/lib-check.php /tmp/smtp-sink.php /tmp/smtp.log /tmp/t.xlsx /tmp/a.pdf
 
 echo "-- persistence"
 dc exec -T slims sh -c 'echo marker > /var/www/html/files/zz-persist.txt'

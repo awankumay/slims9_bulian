@@ -113,7 +113,7 @@ if (isset($_POST['saveData']) && $can_read && $can_write) {
         toastr(__('Password confirmation does not match. See if your Caps Lock key is on!'))->error();
         exit();
     } else if ($sysconf['password_policy_strong'] && ($mpasswd1 AND $mpasswd2) && ($mpasswd1 === $mpasswd2) && !simbio_security::validatePassword($mpasswd2, $sysconf['password_policy_min_length'])) {
-        toastr(__( sprintf('Password should at least %d characters long, contains one capital letter, one number, and one non-alphanumeric character !', $sysconf['password_policy_min_length']) ))->error();
+        toastr(sprintf(__('Password should at least %d characters long, contains one capital letter, one number, and one non-alphanumeric character !'), $sysconf['password_policy_min_length']) )->error();
         exit();
     } else {
         // include custom fields file
@@ -782,7 +782,8 @@ $(document).ready(function() {
         global $sysconf;
         $imageDisk = Storage::images();
         $image = 'images/persons/photo.png';
-        $_q = $obj_db->query('SELECT member_image,member_name,member_address,member_phone FROM member WHERE member_id = "'.$obj_db->escape_string($array_data[0]).'"');
+        $sql = "SELECT member_image,member_name,member_address,member_phone FROM member WHERE member_id = '".$obj_db->escape_string($array_data[0])."'";
+        $_q = $obj_db->query($sql);
         if(isset($_q->num_rows)){
             $_d = $_q->fetch_row();
             if($_d[0] != NULL){     

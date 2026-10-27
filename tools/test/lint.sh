@@ -14,7 +14,7 @@ docker run --rm -i -v "$ROOT":/src:ro -w /src "$IMAGE" sh -c '
   while read -r f; do
     r=$(php -d display_errors=1 -d error_reporting=E_ALL -l "$f" 2>&1)
     case "$r" in
-      *"No syntax errors detected"*) case "$r" in *Deprecated*) echo "DEPRECATED|$f";; esac ;;
+      *"No syntax errors detected"*) case "$r" in *"Deprecated: "*) echo "DEPRECATED|$f";; esac ;;
       *) echo "FAIL|$f|$(echo "$r" | grep -m1 -i error)" ;;
     esac
   done' < "$OUT/lint-files.txt" > "$OUT/lint-$TAG.txt"
