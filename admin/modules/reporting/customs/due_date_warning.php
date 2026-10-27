@@ -158,7 +158,7 @@ if (!$reportView) {
         $_buffer = '<div class="font-weight-bold">' . $member_name . ' (' . $array_data[0] . ')';
         $_buffer .= '<div>' . $member_mail_address;
         $emailStatusId = 'emailStatus' . md5($array_data[0]);
-        if (!empty($member_d[1])) $_buffer .= '<div style="font-size: 10pt; margin-bottom: 3px;"><div id="' . $emailStatusId . '"></div>' . __('E-mail') . ' : <a href="mailto:' . $member_d[1] . '">' . $member_d[1] . '</a> - <a class="usingAJAX btn btn-sm btn-outline-primary" href="' . MWB . 'membership/overdue_mail.php' . '" postdata="memberID=' . urlencode($array_data[0]) . '" loadcontainer="' . $emailStatusId . '"><i class="fa fa-paper-plane-o"></i>&nbsp;' . __('Send Notification e-mail') . '</a> <br/>';
+        if (!empty($member_d[1])) $_buffer .= '<div style="font-size: 10pt; margin-bottom: 3px;"><div id="' . $emailStatusId . '"></div>' . __('E-mail') . ' : <a href="mailto:' . $member_d[1] . '">' . $member_d[1] . '</a> - <a class="usingAJAX btn btn-sm btn-outline-primary" href="' . MWB . 'membership/duedate_mail.php' . '" postdata="memberID=' . urlencode($array_data[0]) . '" loadcontainer="' . $emailStatusId . '"><i class="fa fa-paper-plane-o"></i>&nbsp;' . __('Send Notification e-mail') . '</a> <br/>';
         $_buffer .= __('Phone Number') . ': ' . $member_d[2] . '</div></div>';
         $_buffer .= '<table width="100%" cellspacing="0">';
         while ($_title_d = $_title_q->fetch_assoc()) {
