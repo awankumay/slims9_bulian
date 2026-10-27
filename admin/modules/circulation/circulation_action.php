@@ -393,7 +393,7 @@ if (isset($_POST['reserveItemID'])) {
     $biblio_d = $biblio_q->fetch_row();
     // check if this item is forbidden
     if (!empty($biblio_d[1])) {
-        $arr_rules = @unserialize($biblio_d[1]);
+        $arr_rules = @unserialize($biblio_d[1], ['allowed_classes' => false]);
         if ($arr_rules) {
             if (in_array(NO_LOAN_TRANSACTION, $arr_rules)) {
                 toastr(__('Can\'t reserve this Item. Loan Forbidden!'))->error();

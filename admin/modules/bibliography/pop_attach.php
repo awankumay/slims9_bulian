@@ -329,7 +329,7 @@ $group_options = array();
 while ($group_data = $group_query->fetch_row()) {
   $group_options[] = array($group_data[0], $group_data[1]);
 }
-$form->addCheckBox('accLimit', __('Access Limit by Member Type'), $group_options, !empty($file_attach_d['access_limit'])?unserialize($file_attach_d['access_limit']):null );
+$form->addCheckBox('accLimit', __('Access Limit by Member Type'), $group_options, !empty($file_attach_d['access_limit'])?unserialize($file_attach_d['access_limit'], ['allowed_classes' => false]):null );
 ?>
 <strong><?php echo __('File Attachment'); ?></strong>
 <hr />

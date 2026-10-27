@@ -49,7 +49,7 @@ if ($file_q->num_rows > 0) {
     if ($repository->isExists($file_loc)) {
         if ($file_d['access_limit']) {
             if (utility::isMemberLogin()) {
-                $allowed_mem_types = @unserialize($file_d['access_limit']);
+                $allowed_mem_types = @unserialize($file_d['access_limit'], ['allowed_classes' => false]);
                 if (!in_array($_SESSION['m_member_type_id'], $allowed_mem_types)) {
                     header("location:index.php?p=error&errnum=601");
                     //~ continue;

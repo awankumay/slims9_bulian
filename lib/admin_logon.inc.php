@@ -101,7 +101,7 @@ class admin_logon
             $_SESSION['upict'] = 'person.png';        
         }
         if (!empty($this->user_info['groups'])) {
-            $_SESSION['groups'] = @unserialize($this->user_info['groups']);
+            $_SESSION['groups'] = @unserialize($this->user_info['groups'], ['allowed_classes' => false]);
             // fetch group privileges
             foreach ($_SESSION['groups'] as $group_id) {
                 $_priv_q = $obj_db->query("SELECT ga.*,mdl.module_path FROM group_access AS ga

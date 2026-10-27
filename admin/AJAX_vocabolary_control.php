@@ -33,12 +33,16 @@ require_once '../sysconfig.inc.php';
 // session checking
 require SB . 'admin/default/session.inc.php';
 require SB . 'admin/default/session_check.inc.php';
+require SB . 'admin/default/ajax_lookup_guard.inc.php';
 
 // list limit
 $limit = 20;
 
-$table_name = $dbs->escape_string(trim($_POST['tableName']));
-$table_fields = trim($_POST['tableFields']);
+$table_name = trim($_POST['tableName'] ?? '');
+$table_fields = trim($_POST['tableFields'] ?? '');
+if (!ajaxLookupIsAllowed($table_name, explode(':', $table_fields))) {
+	exit('<option value="0">' . __('Invalid table name format') . '</option>');
+}
 
 if (isset($_POST['keywords']) and !empty($_POST['keywords'])) {
 	$keywords = $dbs->escape_string(urldecode(ltrim($_POST['keywords'])));

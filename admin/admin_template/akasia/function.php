@@ -174,7 +174,7 @@ function get_shortcuts_menu()
       if ($shortcuts_q->num_rows > 0) {
         $setting_value = $shortcuts_d['setting_value'] ?? null;
         if ($setting_value !== null) {
-            $unserialized_data = unserialize($setting_value);
+            $unserialized_data = unserialize($setting_value, ['allowed_classes' => false]);
             if (is_array($unserialized_data)) {
                 $shortcuts = $unserialized_data;
             }

@@ -292,7 +292,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
         $data = array();
 
         ob_start();
-        $unserialized_data = unserialize($rec_d['data']);
+        $unserialized_data = unserialize($rec_d['data'], ['allowed_classes' => false]);
         ob_end_clean();
 
         if (is_array($unserialized_data)) {

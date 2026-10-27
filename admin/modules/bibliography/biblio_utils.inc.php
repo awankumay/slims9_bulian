@@ -233,7 +233,7 @@ function showTitleAuthors($obj_db, $array_data)
   // labels
   // Edit by Eddy Subratha
   if ($_labels) {
-    $arr_labels = @unserialize($_labels);
+    $arr_labels = @unserialize($_labels, ['allowed_classes' => false]);
     if ($arr_labels !== false) {
       foreach ($arr_labels as $label) {
         if (!isset($label_cache[$label[0]]['name'])) {

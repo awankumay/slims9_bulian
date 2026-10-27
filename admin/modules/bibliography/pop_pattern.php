@@ -84,7 +84,7 @@ if (isset($_POST['saveData'])) {
     
     if ($pattern_q->num_rows > 0) {
       $pattern_d = $pattern_q->fetch_row();
-      $val = @unserialize($pattern_d[0]);
+      $val = @unserialize($pattern_d[0], ['allowed_classes' => false]);
       
       if (is_array($val) && count($val) > 0) {
         if (!empty($old_pattern)) {

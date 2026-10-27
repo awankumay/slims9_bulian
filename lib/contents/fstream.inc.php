@@ -66,7 +66,7 @@ if (!$repository->isExists($file_loc)) throw new Exception('File attachment is n
 // check access limit
 if ($file_d['access_limit']) {
   if (utility::isMemberLogin()) {
-    if (!in_array($_SESSION['m_member_type_id'], @unserialize($file_d['access_limit']))) 
+    if (!in_array($_SESSION['m_member_type_id'], @unserialize($file_d['access_limit'], ['allowed_classes' => false]))) 
       throw new Exception(__('Access to file restricted. Member logged in but doesnt have privilege to download'));
   } else {
     $referto = SWB . 'index.php?p=member&destination=index.php?p=fstream&fid=' . $fileID . '&bid=' . $biblioID;
