@@ -83,3 +83,24 @@ Jika ingin cermin murni upstream di fork, buat branch `upstream-sync` yang hanya
 ## 4. Penamaan versi
 
 Rilis fork memakai format `v<versi upstream>-bulian.<n>`, misalnya `v9.8.0-bulian.1`. Versi upstream tetap terbaca, nomor fork naik di setiap rilis internal.
+
+## 5. Membuat rilis
+
+1. Pastikan semua PR rilis sudah di-merge ke `master`, dan `tools/test/run-local.sh` lulus untuk PHP 8.3 dan 8.4.
+2. Perbarui `SENAYAN_VERSION_TAG` di `sysconfig.inc.php` dan `CHANGELOG-bulian.md`.
+3. Buat tag dan push:
+   ```bash
+   git tag -a v9.8.0-bulian.1 -m "SLiMS 9 Bulian fork release 1"
+   git push origin v9.8.0-bulian.1
+   ```
+4. Bangun paket di mesin yang punya internet:
+   ```bash
+   tools/release/build-release.sh v9.8.0-bulian.1 --image
+   ```
+   Hasilnya ada di `dist/<tag>/`:
+   - `slims-bulian-<tag>.tar.gz`: kode dan `vendor/`, untuk instalasi native;
+   - `slims-bulian-<tag>-docker.tar.gz`: image Docker, dimuat dengan `docker load`;
+   - `SHA256SUMS`.
+5. Lampirkan ketiga file itu ke GitHub Release untuk tag tersebut, lalu catat versinya di inventaris client.
+
+Paket native masih berisi `install/` untuk instalasi pertama lewat web. Hapus folder itu setelah instalasi. Installer juga menolak berjalan lagi bila `config/database.php` sudah ada.

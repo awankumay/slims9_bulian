@@ -67,3 +67,6 @@ tarsius
 # Local test runs (tools/test)
 /.harness/
 /tools/test/out/
+
+# Release builds (tools/release)
+/dist/
