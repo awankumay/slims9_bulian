@@ -26,8 +26,12 @@ slims8_akasia.sublime-workspace
 
 plugins/*
 !plugins/read_counter/
+# Fork-owned plugins (see docs/fork/maintenance.md)
+!plugins/bulian_*/
 
 template/*
+# Fork-owned OPAC themes (see docs/fork/maintenance.md)
+!template/bulian-*/
 
 # Windows image file caches
 Thumbs.db
@@ -59,3 +63,7 @@ tarsius
 
 .env
 .htaccess
+
+# Local test runs (tools/test)
+/.harness/
+/tools/test/out/
