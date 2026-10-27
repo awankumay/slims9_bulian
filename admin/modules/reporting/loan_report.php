@@ -137,12 +137,14 @@ if (isset($_GET['print'])) {
     // load print template
     require_once SB.'admin/admin_template/printed.tpl.php';
     // write to file
-    $file_write = @file_put_contents(REPBS.'loan_stat_print_result.html', $html_str);
+    require_once SB.'admin/default/print_result_file.inc.php';
+    $print_file_name = slimsPrintResultName(REPBS, 'loan_stat_print_result', $_SESSION['uname']??'');
+    $file_write = @file_put_contents(REPBS.$print_file_name, $html_str);
     if ($file_write) {
         // open result in new window
         echo '<script type="text/javascript">
         top.$.colorbox({
-            href: "'.SWB.FLS.'/'.REP.'/loan_stat_print_result.html", 
+            href: "'.SWB.FLS.'/'.REP.'/'.$print_file_name.'",
             height: 500,  
             width: 800,
             iframe : true,

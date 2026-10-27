@@ -1,0 +1,14 @@
+# Database backups (.sql and .sql.tar.gz) contain password hashes and all
+# library data. They are downloaded through admin/modules/system/backup.php,
+# which checks the staff session and privileges, never by direct URL, so deny
+# direct web access to this folder entirely.
+#
+# Apache 2.4+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+# Apache 2.2
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

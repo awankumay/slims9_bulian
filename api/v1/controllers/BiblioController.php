@@ -57,12 +57,19 @@ class BiblioController extends Controller
             foreach ($return as $k => $v) {
                 $a_not_in[$k] = $v['biblio_id'];
             }
-            $not_in = '('.implode(', ', $a_not_in).')';
+            // Only exclude the already-listed titles when there are any. On a
+            // fresh install with no loans $a_not_in is empty, and "NOT IN ()"
+            // is a SQL syntax error that made this endpoint return an error
+            // page instead of JSON, leaving the OPAC "popular collection" blank.
+            $not_in_clause = '';
+            if (!empty($a_not_in)) {
+                $not_in_clause = ' AND biblio_id NOT IN ('.implode(', ', array_map('intval', $a_not_in)).')';
+            }
             $need = $limit - $query->num_rows;
             if ($need < 0) {
                 $need = $limit;
             }
-            $sql = "SELECT biblio_id, title, image FROM biblio WHERE opac_hide < 1 AND biblio_id NOT IN ".$not_in." ORDER BY last_update DESC LIMIT {$need}";
+            $sql = "SELECT biblio_id, title, image FROM biblio WHERE opac_hide < 1".$not_in_clause." ORDER BY last_update DESC LIMIT {$need}";
             $query = $this->db->query($sql);
             while ($data = $query->fetch_assoc()) {
                 $data['image'] = $this->getImagePath($data['image']);

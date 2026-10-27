@@ -174,7 +174,8 @@ if (isset($_GET['action']) AND $_GET['action'] == 'print') {
     // unset the session
     unset($_SESSION['card']);
     // write to file
-    $print_file_name = 'member_card_gen_print_result_'.strtolower(str_replace(' ', '_', $_SESSION['uname'])).'.html';
+    require_once SB.'admin/default/print_result_file.inc.php';
+    $print_file_name = slimsPrintResultName(UPLOAD, 'member_card_gen_print_result', $_SESSION['uname']??'');
     $file_write = @file_put_contents(UPLOAD.$print_file_name, $html_str);
     if ($file_write) {
         // update print queue count object

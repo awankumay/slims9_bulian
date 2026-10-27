@@ -29,6 +29,8 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 - Halaman Environment Setting menulis `env.php` dengan aman.
 - `unserialize()` tidak lagi membuat objek dari data tersimpan.
 - Header `X-Content-Type-Options: nosniff` diperbaiki dari `nonsniff`.
+- Halaman hasil cetak (kartu anggota, kartu katalog, label, barcode, dan laporan statistik) kini memakai nama file acak dan menghapus file lama milik pengguna. Sebelumnya nama file bisa ditebak (mis. `member_card_gen_print_result_admin.html`) sehingga data anggota bisa diunduh tanpa login.
+- Folder `files/backup` (berisi dump SQL dengan hash password) ditutup dari akses web langsung; unduhan tetap lewat menu Database Backup.
 
 ### Dependensi
 - PHPMailer 6.1.8 → 6.12.0.
@@ -47,6 +49,7 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 - Template sitasi tidak lagi memunculkan warning variabel, dan pesan di halaman sukses installer diperbaiki (upstream #351).
 - Upload foto user lewat file dan webcam serta pengaturan 2FA diperbaiki.
 - Query `GROUP BY` kompatibel dengan `ONLY_FULL_GROUP_BY`.
+- Blok "koleksi populer" di beranda OPAC tidak lagi error pada instalasi baru tanpa peminjaman (query `NOT IN ()` diperbaiki).
 
 ### Kompatibilitas PHP 8.4
 - Objek barcode Zend EAN-13, EAN-8, EAN-5, UPC-A, UPC-E, Code25, dan Identcode serta validator ISBN bisa dimuat lagi di PHP 8. Plugin label barcode (Code128) tidak lagi memunculkan deprecation `imagefilledpolygon()`.
@@ -55,7 +58,7 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 
 ### Lain-lain
 - Ditambahkan kit uji lokal `tools/test/` dan skrip rilis `tools/release/build-release.sh`.
-- Ditambahkan dokumentasi `docs/deployment/docker.md` dan `docs/fork/maintenance.md`.
+- Ditambahkan dokumentasi `docs/deployment/docker.md`, `docs/deployment/native.md`, dan `docs/fork/maintenance.md`.
 - File contoh `js/quaggaJS/server.pem` dan `simple-https-server.py` dihapus.
 
 ### Batasan yang diketahui
