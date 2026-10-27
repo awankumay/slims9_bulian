@@ -47,11 +47,13 @@ if ($_SESSION['uid'] != 1 && !utility::haveAccess('circulation.loan-history-main
     die('<div class="errorBox">' . __('You are not authorized to view this section') . '</div>');
 }
 
-if (empty($_SESSION['csrf_token']) || is_array($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+// Own session key: $_SESSION['csrf_token'] is the per-form token array used by
+// simbio_form_maker, and overwriting it with a string breaks every admin form.
+if (empty($_SESSION['loan_history_csrf']) || !is_string($_SESSION['loan_history_csrf'])) {
+    $_SESSION['loan_history_csrf'] = bin2hex(random_bytes(32));
 }
 
-$session_csrf = is_array($_SESSION['csrf_token']) ? (($_SESSION['csrf_token'][0] ?? '')) : $_SESSION['csrf_token'];
+$session_csrf = $_SESSION['loan_history_csrf'];
 
 // Utilities
 function _echo($message)
