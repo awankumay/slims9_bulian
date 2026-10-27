@@ -1,61 +1,84 @@
 #!/bin/sh
+set -e
 
-# Write environment variables to env.php
-cat <<EOF >/var/www/html/config/env.php
+APP_DIR=/var/www/html
+CONFIG_DIR="$APP_DIR/config"
+
+# Only two modes are supported by SLiMS. Anything else falls back to production.
+case "${ENV}" in
+    development) ;;
+    *) ENV=production ;;
+esac
+export ENV
+
+# Write env.php and database.php from environment variables. Values are encoded
+# with var_export so quotes or backslashes in a password cannot break the file.
+# Nothing from these files is printed to the log.
+umask 027
+php <<'PHP'
 <?php
-\$env = "${ENV}";
-\$conditional_environment = "${ENV}";
-\$based_on_ip = false;
-\$range_ip = [''];
-if (\$based_on_ip) {
-    if (array_key_exists('HTTP_X_FORWARDED_FOR', \$_SERVER) && in_array(\$_SERVER['HTTP_X_FORWARDED_FOR'], \$range_ip)) {
-        \$env = \$conditional_environment;
-    } else if (in_array(\$_SERVER['REMOTE_ADDR'], \$range_ip)) {
-        \$env = \$conditional_environment;
-    }   
-}
-EOF
+$configDir = '/var/www/html/config';
+$env = getenv('ENV');
 
-echo "PHP configuration file created: /var/www/html/config/env.php"
-cat /var/www/html/config/env.php
+$envFile = "<?php\n"
+    . '$env = ' . var_export($env, true) . ";\n"
+    . '$conditional_environment = ' . var_export($env, true) . ";\n"
+    . "\$based_on_ip = false;\n"
+    . "\$range_ip = [''];\n";
+file_put_contents($configDir . '/env.php', $envFile);
 
-# Write environment variables to database.php
-cat <<EOF >/var/www/html/config/database.php
-<?php
-return [
+$database = [
     'default_profile' => 'SLiMS',
     'proxy' => false,
     'nodes' => [
         'SLiMS' => [
-            'host' => '${DB_HOST}',
-            'database' => '${DB_NAME}',
-            'port' => '${DB_PORT}',
-            'username' => '${DB_USER}',
-            'password' => '${DB_PASS}',
+            'host' => (string) getenv('DB_HOST'),
+            'database' => (string) getenv('DB_NAME'),
+            'port' => (string) (getenv('DB_PORT') ?: '3306'),
+            'username' => (string) getenv('DB_USER'),
+            'password' => (string) getenv('DB_PASS'),
             'options' => [
                 'storage_engine' => 'MyISAM'
             ]
         ]
     ]
 ];
-EOF
+file_put_contents($configDir . '/database.php', "<?php\nreturn " . var_export($database, true) . ";\n");
+PHP
+umask 022
+chown root:www-data "$CONFIG_DIR/env.php" "$CONFIG_DIR/database.php"
+chmod 0640 "$CONFIG_DIR/env.php" "$CONFIG_DIR/database.php"
+echo "Configuration written: config/env.php (ENV=${ENV}), config/database.php"
 
-echo "PHP configuration file created: /var/www/html/config/database.php"
-cat /var/www/html/config/database.php
+# SLiMS creates these from the samples at runtime, but config/ is not writable
+# by www-data, which turns every request into HTTP 500. Create them here.
+for name in csp auth; do
+    if [ ! -f "$CONFIG_DIR/$name.php" ] && [ -f "$CONFIG_DIR/$name.sample.php" ]; then
+        cp "$CONFIG_DIR/$name.sample.php" "$CONFIG_DIR/$name.php"
+        echo "Configuration created from sample: config/$name.php"
+    fi
+done
 
-# Wait for database to be ready
-echo "Waiting for database to be ready..."
+# Wait for the database, but not forever.
+DB_WAIT_TIMEOUT="${DB_WAIT_TIMEOUT:-120}"
+echo "Waiting for database (timeout ${DB_WAIT_TIMEOUT}s)..."
+waited=0
 until php -r "
-\$conn = new mysqli(getenv('DB_HOST'), getenv('DB_USER'), getenv('DB_PASS'), getenv('DB_NAME'), (int)getenv('DB_PORT'));
+mysqli_report(MYSQLI_REPORT_OFF);
+\$conn = @new mysqli(getenv('DB_HOST'), getenv('DB_USER'), getenv('DB_PASS'), getenv('DB_NAME'), (int)(getenv('DB_PORT') ?: 3306));
 exit(\$conn->connect_error ? 1 : 0);
 " 2>/dev/null; do
-    echo "  Database not ready, retrying in 2s..."
+    if [ "$waited" -ge "$DB_WAIT_TIMEOUT" ]; then
+        echo "ERROR: database not reachable after ${DB_WAIT_TIMEOUT}s. Check DB_HOST, DB_USER, DB_PASS and DB_NAME." >&2
+        exit 1
+    fi
     sleep 2
+    waited=$((waited + 2))
 done
 echo "Database is ready."
 
 # Randomize admin password on first startup only
-INIT_FLAG="/var/www/html/files/.admin_initialized"
+INIT_FLAG="$APP_DIR/files/.admin_initialized"
 if [ ! -f "$INIT_FLAG" ]; then
     ADMIN_PASS=$(openssl rand -base64 12 | tr -dc 'A-Za-z0-9' | head -c 16)
     export ADMIN_PASS
@@ -63,7 +86,7 @@ if [ ! -f "$INIT_FLAG" ]; then
     export ADMIN_HASH
 
     php -r "
-\$conn = new mysqli(getenv('DB_HOST'), getenv('DB_USER'), getenv('DB_PASS'), getenv('DB_NAME'), (int)getenv('DB_PORT'));
+\$conn = new mysqli(getenv('DB_HOST'), getenv('DB_USER'), getenv('DB_PASS'), getenv('DB_NAME'), (int)(getenv('DB_PORT') ?: 3306));
 if (\$conn->connect_error) {
     echo 'DB connection failed: ' . \$conn->connect_error . PHP_EOL;
     exit(1);
