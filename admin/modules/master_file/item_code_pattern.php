@@ -56,7 +56,7 @@ if (isset($_POST['itemID']) AND !empty($_POST['itemID']) AND isset($_POST['itemA
     /* DATA DELETION PROCESS */
     $pattern_q = $dbs->query('SELECT setting_value FROM setting WHERE setting_name = \'batch_item_code_pattern\'');
     $pattern_d = $pattern_q->fetch_row();
-    $patterns = @unserialize($pattern_d[0]);
+    $patterns = @unserialize($pattern_d[0], ['allowed_classes' => false]);
     foreach ($_POST['itemID'] as $pattern_id) {
         $key = array_search(trim($pattern_id), $patterns);
         if ($key !== false) {
@@ -105,7 +105,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     $pattern_q = $dbs->query('SELECT setting_value FROM setting WHERE setting_name = \'batch_item_code_pattern\'');
     if ($pattern_q->num_rows > 0) {
         $pattern_d = $pattern_q->fetch_row();
-        $patterns = @unserialize($pattern_d[0]);
+        $patterns = @unserialize($pattern_d[0], ['allowed_classes' => false]);
 
         $table = new simbio_table();
 

@@ -96,7 +96,7 @@ if (isset($_POST['itemCode'])) {
                 if($_d == NULL){
                     $update = $dbs->query("UPDATE stock_take SET stock_take_users='".$stock_take_users."' WHERE is_active=1");
                 }else{
-                    $user = unserialize($_d);
+                    $user = unserialize($_d, ['allowed_classes' => false]);
                     $user[$_SESSION['realname']] = $_SESSION['realname'];
                     $stock_take_users = serialize($user);
                     $update = $dbs->query("UPDATE stock_take SET stock_take_users='".$stock_take_users."' WHERE is_active=1");

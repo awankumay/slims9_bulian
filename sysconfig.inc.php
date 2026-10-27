@@ -576,7 +576,7 @@ $localisation->load(function($memory) use($dbs, &$sysconf) {
         if (empty($_SESSION['lang'])) {
             $lang_dbs = $dbs->query("SELECT setting_value FROM setting WHERE setting_name = 'default_lang'");
             $lang_dbs_res = $lang_dbs->fetch_assoc();
-            if ($lang_dbs_res && ($lang_val = unserialize($lang_dbs_res['setting_value']))) {
+            if ($lang_dbs_res && ($lang_val = unserialize($lang_dbs_res['setting_value'], ['allowed_classes' => false]))) {
                 $_SESSION['lang'] = $lang_val;
             } else {
                 $_SESSION['lang'] = 'en_US'; // Fallback to English

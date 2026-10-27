@@ -83,12 +83,12 @@ trait HasCustomField
             $cf_default = $field['default'];
             $cf_class = $field['class'] ?? '';
             $cf_note = $field['note'] ?? '';
-            $cf_data = (isset($field['data']) && $field['data']) ? unserialize($field['data']) : array();
+            $cf_data = (isset($field['data']) && $field['data']) ? unserialize($field['data'], ['allowed_classes' => false]) : array();
 
             // get data field record
             if (isset($rec_cust_d[$cf_dbfield]) && isSerialized($rec_cust_d[$cf_dbfield])) {
                 try {
-                    $unserialized = unserialize($rec_cust_d[$cf_dbfield]);
+                    $unserialized = unserialize($rec_cust_d[$cf_dbfield], ['allowed_classes' => false]);
                     if ($unserialized !== false || $rec_cust_d[$cf_dbfield] === serialize(false)) {
                         $rec_cust_d[$cf_dbfield] = $unserialized;
                     }

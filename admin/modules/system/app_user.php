@@ -461,7 +461,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     $str_input = '';
     $social_media = array();
     if (isset($rec_d['social_media'])) {
-      $social_media = @unserialize($rec_d['social_media']);
+      $social_media = @unserialize($rec_d['social_media'], ['allowed_classes' => false]);
     }
     $str_input = '<div class="row">';
     foreach ($sysconf['social'] as $id => $social) {
@@ -542,7 +542,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
         while ($group_data = $group_query->fetch_row()) {
             $group_options[] = array($group_data[0], $group_data[1]);
         }
-        $form->addCheckBox('groups', __('Group(s)'), $group_options, unserialize($rec_d['groups']??''));
+        $form->addCheckBox('groups', __('Group(s)'), $group_options, unserialize($rec_d['groups']??'', ['allowed_classes' => false]));
     }
     // user password
     if ( (isset($_GET['changecurrent'])) AND ($_GET['changecurrent']='true') ) {

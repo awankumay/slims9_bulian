@@ -149,7 +149,7 @@ class detail
                 $_output .= '<li class="attachment-locked" style="list-style-image: url(images/labels/locked.png)"><a class="font-italic" href="index.php?p=member&destination=' . (\SLiMS\Url::getSlimsFullUri('#attachment')->encode()) . '">'.__('Please login to see this attachment').'</a></li>';
                 continue;
               // member type access check 
-              } else if (utility::isMemberLogin() && !in_array($_SESSION['m_member_type_id'], unserialize($attachment_d['access_limit']))) {
+              } else if (utility::isMemberLogin() && !in_array($_SESSION['m_member_type_id'], unserialize($attachment_d['access_limit'], ['allowed_classes' => false]))) {
                 $_output .= '<li class="attachment-locked cursor-pointer" style="list-style-image: url(images/labels/locked.png)">'. __('You have no authorization to download this file.') . '</li>';
                 continue;
               }
@@ -381,7 +381,7 @@ HTML;
           foreach ($public_fields as $custom_field) {
             $dbfield = $custom_field['dbfield'];
             if (isset($data[$dbfield])) {
-              $data_field = unserialize($custom_field['data']??'');
+              $data_field = unserialize($custom_field['data']??'', ['allowed_classes' => false]);
               if (!is_array($data_field)) $data_field = [];
               $data_record  = $data[$dbfield];
               $arr = [];
@@ -394,7 +394,7 @@ HTML;
                   $value = end($temp_array);
                   break;
                 case 'checklist':
-                  $data_record = unserialize($data_record);
+                  $data_record = unserialize($data_record, ['allowed_classes' => false]);
                   if (is_array($data_record)) {
                     foreach ($data_record as $key => $val) {
                       if(isset($data_field[$val])){

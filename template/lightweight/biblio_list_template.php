@@ -51,7 +51,7 @@ function biblio_list_format($dbs, $biblio_detail, $n, $settings = array(), &$ret
 
   // label
   if (isset($settings['show_labels']) AND !empty($biblio_detail['labels'])) {
-    $labels = @unserialize($biblio_detail['labels']);
+    $labels = @unserialize($biblio_detail['labels'], ['allowed_classes' => false]);
     if ($labels !== false) {
       foreach ($labels as $label) {
         if (!isset($label_cache[$label[0]]['name'])) {

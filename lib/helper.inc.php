@@ -563,7 +563,7 @@ if (!function_exists('isSerialized')) {
         }
 
         try {
-            $result = @unserialize($data);
+            $result = @unserialize($data, ['allowed_classes' => false]);
             if ($result === false && $data !== serialize(false)) {
                 return false;
             }

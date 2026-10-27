@@ -845,7 +845,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'history') {
         // empty pattern
         $pattern_options = array(array('', '-- ' . __('Choose pattern') . ' --'));
         $pattern_d = $pattern_q->fetch_row();
-        $val = unserialize($pattern_d[0]??'');
+        $val = unserialize($pattern_d[0]??'', ['allowed_classes' => false]);
         if (!empty($val)) {
             foreach ($val as $v) {
                 $pattern_options[] = array($v, $v);
@@ -1128,7 +1128,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'history') {
     $promote_options[] = array('1', __('Promote'));
     $form->addRadio('promote', __('Promote To Homepage'), $promote_options, isset($rec_d['promoted']) && $rec_d['promoted'] ? '1' : '0');
     // biblio labels
-    $arr_labels = !empty($rec_d['labels']) ? unserialize($rec_d['labels']) : array();
+    $arr_labels = !empty($rec_d['labels']) ? unserialize($rec_d['labels'], ['allowed_classes' => false]) : array();
     if ($arr_labels) {
         foreach ($arr_labels as $label) {
             $arr_labels[$label[0]] = $label[1];

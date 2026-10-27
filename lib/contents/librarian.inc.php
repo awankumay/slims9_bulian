@@ -50,7 +50,7 @@ if ($librarian_q->num_rows > 0) {
     echo '<div class="row-fluid"><div class="span3 key">'.__('Social').'</div><div class="span9">';
     $social = array();
     if ($librarian['social_media']){
-      $social = @unserialize($librarian['social_media']);
+      $social = @unserialize($librarian['social_media'], ['allowed_classes' => false]);
       echo '<ul class="librarian-social">';
       foreach ($sysconf['social'] as $id => $social_media) {
         if (isset($social[$id])) {

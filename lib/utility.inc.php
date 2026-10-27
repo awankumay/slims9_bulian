@@ -145,7 +145,7 @@ class utility
             );
 
             // Attempt to unserialize with error suppression
-            $result = @unserialize($str);
+            $result = @unserialize($str, ['allowed_classes' => false]);
 
             // If unserialize succeeded, return the result
             if ($result !== false || $str === 'b:0;' || $str === 'N;') {
@@ -723,7 +723,7 @@ class utility
         // load user template settings for override setting
         $_q = $obj_db->query("SELECT admin_template FROM user WHERE user_id=$uid AND (admin_template!=NULL OR admin_template !='')");
         if ($_q->num_rows > 0) {
-            $template_settings = unserialize($_q->fetch_row()[0]);
+            $template_settings = unserialize($_q->fetch_row()[0], ['allowed_classes' => false]);
             foreach ($template_settings as $setting_name => $setting_value) {
                 $sysconf['admin_template'][$setting_name] = $setting_value;
             }

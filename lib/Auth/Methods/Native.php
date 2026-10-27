@@ -127,14 +127,14 @@ class Native extends Contract
         $this->data['biblioAuthor'] = array();
         $this->data['biblioTopic'] = array();
         $this->data['biblioAttach'] = array();
-        $this->data['template'] = unserialize($this->data['template'] ?? 'N;');
+        $this->data['template'] = unserialize($this->data['template'] ?? 'N;', ['allowed_classes' => false]);
 
         if (empty($this->data['upict'])) {
             $this->data['upict'] = 'person.png';
         }
 
         if (!empty($this->data['groups'])) {
-            $this->data['groups'] = @unserialize($this->data['groups']);
+            $this->data['groups'] = @unserialize($this->data['groups'], ['allowed_classes' => false]);
             // fetch group privileges
             foreach ($this->data['groups'] as $group_id) {
                 $_priv_q = DB::query("SELECT ga.*,mdl.module_path FROM group_access AS ga
