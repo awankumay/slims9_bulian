@@ -12,9 +12,13 @@ require_once '../sysconfig.inc.php';
 // session checking
 require SB.'admin/default/session.inc.php';
 require SB.'admin/default/session_check.inc.php';
+require SB.'admin/default/ajax_lookup_guard.inc.php';
 
-$table_name = $dbs->escape_string(trim($_POST['tableName']));
-$table_fields = $dbs->escape_string(trim($_POST['tableFields']));
+$table_name = trim($_POST['tableName'] ?? '');
+$table_fields = trim($_POST['tableFields'] ?? '');
+if (!ajaxLookupIsAllowed($table_name, [$table_fields])) {
+  die('<strong style="color: #FF0000;">' . __('Invalid table name format') . '</strong>');
+}
 if (isset($_POST['id']) AND !empty($_POST['id'])) {
   $id = $dbs->escape_string(trim($_POST['id']));
 } else {

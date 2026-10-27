@@ -32,6 +32,7 @@ require_once '../sysconfig.inc.php';
 // session checking
 require SB . 'admin/default/session.inc.php';
 require SB . 'admin/default/session_check.inc.php';
+require SB . 'admin/default/ajax_lookup_guard.inc.php';
 
 header('Access-Control-Allow-Origin: *'); 
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -56,7 +57,7 @@ $table_state = explode(':', trim($_POST['tableName'] ?? ''));
 $raw_table_name = trim($table_state[1] ?? $table_state[0]);
 $table_fields = trim($_POST['tableFields'] ?? '');
 
-if (!preg_match('/^[a-zA-Z0-9_]+$/', $raw_table_name)) {
+if (!ajaxLookupIsAllowed($raw_table_name, explode(':', $table_fields))) {
     if ($rawInput == false) exit('<option value="0">' . __('Invalid table name format') . '</option>');
     else exit(json_encode(array('id' => 0, 'text' => __('Invalid table name format'))));
 }
@@ -175,4 +176,4 @@ if ($contentType == 'application/json') {
 	}
     if (isset($stmt)) $stmt->close();
 	exit();
-}
+}
