@@ -50,6 +50,7 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 - Upload foto user lewat file dan webcam serta pengaturan 2FA diperbaiki.
 - Query `GROUP BY` kompatibel dengan `ONLY_FULL_GROUP_BY`.
 - Blok "koleksi populer" di beranda OPAC tidak lagi error pada instalasi baru tanpa peminjaman (query `NOT IN ()` diperbaiki).
+- Fitur Database Backup berfungsi lagi di build yang memakai `vendor/` (Docker dan paket rilis). Dependensi Composer `ifsnop/mysqldump-php` dihapus karena menimpa salinan `lib/mysqldump-php` yang sudah dimodifikasi SLiMS (konstruktor berbasis `Connection`); sebelumnya backup gagal dengan "Empty DSN string".
 
 ### Kompatibilitas PHP 8.4
 - Objek barcode Zend EAN-13, EAN-8, EAN-5, UPC-A, UPC-E, Code25, dan Identcode serta validator ISBN bisa dimuat lagi di PHP 8. Plugin label barcode (Code128) tidak lagi memunculkan deprecation `imagefilledpolygon()`.
