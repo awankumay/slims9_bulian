@@ -95,10 +95,20 @@ if (isset($_GET['keywords']) AND $_GET['keywords']) {
 
 function addTitle($dbs, $data)
 {
-    return '<strong>' . __('Title') . '</strong> : <br>' . $data[1] . ' <hr/></br> <div style="line-height: 1.1;">'.$data[2].'</div>';
+    // comments are written by OPAC members: escape the title and keep only safe markup
+    $comment = class_exists('HTMLPurifier')
+        ? (new \HTMLPurifier(\HTMLPurifier_Config::createDefault()))->purify($data[2] ?? '')
+        : htmlspecialchars($data[2] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    return '<strong>' . __('Title') . '</strong> : <br>' . htmlspecialchars($data[1] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . ' <hr/></br> <div style="line-height: 1.1;">'.$comment.'</div>';
+}
+
+function escapeCommentAuthor($dbs, $data)
+{
+    return htmlspecialchars($data[3] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
 $datagrid->modifyColumnContent(2, 'callback{addTitle}');
+$datagrid->modifyColumnContent(3, 'callback{escapeCommentAuthor}');
 
 // set table and table header attributes
 $datagrid->table_attr = 'id="dataList" class="s-table table"';
