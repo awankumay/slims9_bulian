@@ -28,6 +28,7 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 - Cookie sesi memakai `HttpOnly` dan `SameSite=Lax`.
 - Halaman Environment Setting menulis `env.php` dengan aman.
 - `unserialize()` tidak lagi membuat objek dari data tersimpan.
+- Reflected XSS tanpa login di `admin/modules/circulation/ajax_action.php` (quick return) ditutup: endpoint kini mewajibkan sesi staf login, dan nilai input dikeluarkan lewat `rawurlencode` + `json_encode` sehingga tidak bisa menembus blok `<script>`.
 - Header `X-Content-Type-Options: nosniff` diperbaiki dari `nonsniff`.
 - Halaman hasil cetak (kartu anggota, kartu katalog, label, barcode, dan laporan statistik) kini memakai nama file acak dan menghapus file lama milik pengguna. Sebelumnya nama file bisa ditebak (mis. `member_card_gen_print_result_admin.html`) sehingga data anggota bisa diunduh tanpa login.
 - Folder `files/backup` (berisi dump SQL dengan hash password) ditutup dari akses web langsung; unduhan tetap lewat menu Database Backup.
