@@ -305,7 +305,8 @@ if (isset($_GET['action']) and $_GET['action'] == 'print') {
     unset($_SESSION['cards']);
 
     // write to file
-    $print_file_name = 'catalog_print_result_' . strtolower(str_replace(' ', '_', $_SESSION['uname'])) . '.html';
+    require_once SB.'admin/default/print_result_file.inc.php';
+    $print_file_name = slimsPrintResultName(UPLOAD, 'catalog_print_result', $_SESSION['uname']??'');
     $file_write = @file_put_contents(UPLOAD . $print_file_name, $html_str);
     if ($file_write) {
         echo '<script type="text/javascript">parent.$(\'#queueCount\').html(\'0\');</script>';
