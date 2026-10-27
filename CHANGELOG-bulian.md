@@ -3,6 +3,15 @@
 Rilis fork `awankumay/slims9_bulian` memakai format `v<versi upstream>-bulian.<n>`.
 Riwayat SLiMS upstream ada di `changes.txt`.
 
+## Belum dirilis
+
+### Tema dan layanan
+- Tema OPAC baru `bulian-kampus` untuk perpustakaan kampus di bawah kementerian: kepala halaman resmi dua logo (kampus kiri, kementerian kanan), menu utama, pencarian di beranda, kartu layanan cepat, jam layanan, maklumat pelayanan, partisipasi publik (SKM, SP4N-LAPOR!), dan footer layanan publik (standar pelayanan, PPID, kebijakan privasi). Semua teks instansi, warna, dan tautan diatur dari Kustomisasi tema.
+- Aksesibilitas tema `bulian-kampus`: ukuran teks, mode kontras tinggi, tautan "Langsung ke konten", fokus keyboard terlihat, dan font lokal (Lato, Saira).
+- Buku tamu tema `bulian-kampus` menjadi kiosk pindai kartu: pemindai USB barcode/QR, kamera opsional (QR, Code128, Code39, EAN-13; butuh HTTPS), penolakan pindai ganda, dan form tamu otomatis untuk ID yang tidak terdaftar.
+- Tema kartu anggota baru `bulian-kartu` (CR80) dengan barcode Code128 di depan dan QR buku tamu di belakang, keduanya digambar sebagai SVG.
+- Panduan: `docs/fork/tema-kampus-dan-kartu.md`.
+
 ## v9.8.0-bulian.1
 
 Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3.36 dan 8.4.27 dengan MariaDB LTS.
