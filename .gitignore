@@ -7,6 +7,7 @@ images/content/*
 images/default/logo.*
 images/default/webicon.*
 files/*
+!files/membercard/
 !files/membercard/*
 repository/*
 config/*
