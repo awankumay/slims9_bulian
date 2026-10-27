@@ -17,16 +17,16 @@ to learn more about GPL.
 - PHP gettext enabled
 - PHP mbstring enabled
 
-### Running Docker Development
+### Running with Docker
 
-Using docker for running requires Docker Desktop service, as it will use Docker to create the database.
-Before run docker compose copy .env.example to .env for setting http port and maria db (db) port 
-can be change on .env
-
-You can run the test using this command :
+Copy `.env.example` to `.env`, set `DB_PASS` and `DB_ROOT_PASS`, then run:
 
 ```shell
 docker compose up -d --build
+docker compose logs slims | grep -A3 "ADMIN CREDENTIALS"
 ```
 
-Setting docker default can be change on docker-compose.yml
+The image runs PHP 8.3.36 by default (PHP 8.4.27 is also supported via `PHP_IMAGE`).
+See `docs/deployment/docker.md` (Bahasa Indonesia) for configuration, HTTPS and
+upgrading from the previous compose file, and `docs/fork/maintenance.md` for local
+tests (`tools/test/run-local.sh`) and syncing with upstream.

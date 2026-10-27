@@ -1,4 +1,32 @@
+# Version control and editor files
+.git
 .github
 .gitignore
-docker-compose.yml
-Dockerfile
+.idea
+.vscode
+.DS_Store
+
+# Secrets and local configuration
+.env
+.env.*
+config/database.php
+config/env.php
+config/csp.php
+config/auth.php
+config/captcha.php
+
+# Built on image build from composer.lock
+vendor
+
+# Not part of the runtime
+docker-compose*.yml
+compose*.yml
+Dockerfile*
+tools
+docs
+audit-reports
+.harness
+
+# Sample files that should not be served
+js/quaggaJS/server.pem
+js/quaggaJS/simple-https-server.py
