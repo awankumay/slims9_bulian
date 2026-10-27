@@ -33,3 +33,10 @@ if (!defined('INDEX_AUTH')) {
 
 // use session factory to handle session based on default SLiMS or user handler
 SessionFactory::use(config('customSession', Files::class))->start('memberArea');
+
+// Issue a stable per-session CSRF token for a logged-in member. It is reused
+// across requests (not rotated per page) so member AJAX actions can send it on
+// every call. State-changing member actions validate it (see member.inc.php).
+if (!empty($_SESSION['mid']) && empty($_SESSION['member_csrf_token'])) {
+    $_SESSION['member_csrf_token'] = bin2hex(random_bytes(32));
+}

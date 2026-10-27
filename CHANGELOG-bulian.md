@@ -25,9 +25,12 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 - Validasi CSRF:
   - Halaman Loan History Maintenance kini memakai POST dengan token CSRF.
   - Token CSRF OPAC juga diterima lewat header dan POST.
+  - Aksi area member yang mengubah data (tambah/hapus bookmark, tambah/hapus/kosongkan keranjang, kirim reservasi, ganti sandi) kini memvalidasi token CSRF per-sesi. Token dikirim otomatis lewat header `X-SLiMS-Member-CSRF` pada setiap AJAX member dan sebagai field tersembunyi pada form. Penghapusan keranjang lewat GET (`rm_biblio`) kini juga butuh token sehingga tidak bisa dipicu lewat navigasi lintas situs.
+- Endpoint API statistik agregat (`biblio/total/all`, `item/total/*`, `loan/summary`, `loan/getdate`, `loan/summary/[tanggal]`) kini mewajibkan sesi staf login dan menolak pemanggil anonim (HTTP 403). Dashboard admin membaca angka-angka tersebut langsung di server, sehingga tampilan tidak berubah sementara jumlah koleksi/item/sirkulasi tidak lagi bisa diambil tanpa autentikasi.
 - Cookie sesi memakai `HttpOnly` dan `SameSite=Lax`.
 - Halaman Environment Setting menulis `env.php` dengan aman.
 - `unserialize()` tidak lagi membuat objek dari data tersimpan.
+- Reflected XSS tanpa login di `admin/modules/circulation/ajax_action.php` (quick return) ditutup: endpoint kini mewajibkan sesi staf login, dan nilai input dikeluarkan lewat `rawurlencode` + `json_encode` sehingga tidak bisa menembus blok `<script>`.
 - Header `X-Content-Type-Options: nosniff` diperbaiki dari `nonsniff`.
 - Halaman hasil cetak (kartu anggota, kartu katalog, label, barcode, dan laporan statistik) kini memakai nama file acak dan menghapus file lama milik pengguna. Sebelumnya nama file bisa ditebak (mis. `member_card_gen_print_result_admin.html`) sehingga data anggota bisa diunduh tanpa login.
 - Folder `files/backup` (berisi dump SQL dengan hash password) ditutup dari akses web langsung; unduhan tetap lewat menu Database Backup.
@@ -50,6 +53,7 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 - Upload foto user lewat file dan webcam serta pengaturan 2FA diperbaiki.
 - Query `GROUP BY` kompatibel dengan `ONLY_FULL_GROUP_BY`.
 - Blok "koleksi populer" di beranda OPAC tidak lagi error pada instalasi baru tanpa peminjaman (query `NOT IN ()` diperbaiki).
+- Fitur Database Backup berfungsi lagi di build yang memakai `vendor/` (Docker dan paket rilis). Dependensi Composer `ifsnop/mysqldump-php` dihapus karena menimpa salinan `lib/mysqldump-php` yang sudah dimodifikasi SLiMS (konstruktor berbasis `Connection`); sebelumnya backup gagal dengan "Empty DSN string".
 
 ### Kompatibilitas PHP 8.4
 - Objek barcode Zend EAN-13, EAN-8, EAN-5, UPC-A, UPC-E, Code25, dan Identcode serta validator ISBN bisa dimuat lagi di PHP 8. Plugin label barcode (Code128) tidak lagi memunculkan deprecation `imagefilledpolygon()`.
@@ -62,6 +66,5 @@ Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3
 - File contoh `js/quaggaJS/server.pem` dan `simple-https-server.py` dihapus.
 
 ### Batasan yang diketahui
-- Aksi member area (reservasi, keranjang, bookmark) belum memakai token CSRF. Cookie `SameSite=Lax` sudah memitigasi serangan dari browser modern.
 - Folder `install/` dihapus dari image Docker, sehingga upgrade skema dari SLiMS lama (≤ 9.7) harus lewat instalasi native atau menjalankan installer secara manual.
 - Library `lib/` lain (Symfony 5.x, Carbon, gettext) masih memunculkan deprecation PHP 8.4. Statusnya hanya peringatan dan disembunyikan di mode production.

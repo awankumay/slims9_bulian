@@ -36,6 +36,39 @@ if (!defined('INDEX_AUTH')) {
     die("can not access this file directly");
 }
 
+// Synchronizer token for member-area, state-changing actions (basket,
+// bookmark, reservation, password change). The token is a stable per-session
+// value (generated in lib/member_session.inc.php for a logged-in member),
+// exposed to the browser through a meta tag and sent back on every member
+// AJAX request plus the member forms. SameSite=Lax cookies already blunt
+// cross-site POST, and this closes the remaining gap (e.g. state changes made
+// through a top-level navigation).
+if (!function_exists('memberCsrfValid')) {
+    function memberCsrfValid(): bool
+    {
+        if (empty($_SESSION['member_csrf_token'])) {
+            return false;
+        }
+        $sent = $_SERVER['HTTP_X_SLIMS_MEMBER_CSRF']
+            ?? $_POST['__member_csrf']
+            ?? $_GET['__member_csrf']
+            ?? '';
+        return is_string($sent) && $sent !== '' && hash_equals($_SESSION['member_csrf_token'], $sent);
+    }
+}
+
+if (!function_exists('memberCsrfRejectJson')) {
+    function memberCsrfRejectJson(): void
+    {
+        http_response_code(403);
+        exit(\SLiMS\Json::stringify([
+            'status' => false,
+            'message' => __('Invalid or missing security token. Please reload the page and try again.'),
+            'count' => count($_SESSION['m_mark_biblio'] ?? [])
+        ])->withHeader());
+    }
+}
+
 if ($sysconf['baseurl'] != '') {
     $_host = $sysconf['baseurl'];
     header("Access-Control-Allow-Origin: $_host", FALSE);
@@ -136,6 +169,9 @@ if (isset($_POST['logMeIn']) && !$is_member_login) {
 // biblio basket add process
 if ($is_member_login) {
     if (isset($_POST['biblio'])) {
+        if (!memberCsrfValid()) {
+            memberCsrfRejectJson();
+        }
         if (!is_array($_POST['biblio']) && is_scalar($_POST['biblio'])) {
             $_tmp_biblio = $_POST['biblio'];
             unset($_POST['biblio']);
@@ -166,6 +202,9 @@ if ($is_member_login) {
     }
     if (isset($_POST['bookmark_id']))
     {
+        if (!memberCsrfValid()) {
+            memberCsrfRejectJson();
+        }
         try {
             // switch to delete process
             if (isset($_POST['delete_bookmark']))
@@ -205,7 +244,7 @@ if ($is_member_login) {
 }
 
 // biblio basket remove process
-if (isset($_GET['rm_biblio'])) {
+if (isset($_GET['rm_biblio']) && memberCsrfValid()) {
     if (!is_array($_GET['rm_biblio']) && is_scalar($_GET['rm_biblio'])) {
         $_tmp_biblio = $_GET['rm_biblio'];
         unset($_GET['rm_biblio']);
@@ -218,14 +257,14 @@ if (isset($_GET['rm_biblio'])) {
 }
 
 // biblio basket item removal process
-if (isset($_POST['basketRemove']) && isset($_POST['basket']) && count($_POST['basket']) > 0) {
+if (isset($_POST['basketRemove']) && isset($_POST['basket']) && count($_POST['basket']) > 0 && memberCsrfValid()) {
     foreach ($_POST['basket'] as $basket_item) {
         unset($_SESSION['m_mark_biblio'][$basket_item]);
     }
 }
 
 // biblio basket clear process
-if (isset($_POST['clear_biblio'])) {
+if (isset($_POST['clear_biblio']) && memberCsrfValid()) {
     $_SESSION['m_mark_biblio'] = array();
 }
 
@@ -315,6 +354,7 @@ if ($is_member_login) :
         $_form .= '<td class="alterCell2" colspan="2"><input class="btn btn-primary" type="submit" id="loginButton" name="changePass" value="' . __('Change Password') . '" /></td>';
         $_form .= '</tr>' . "\n";
         $_form .= '</table>' . "\n";
+        $_form .= '<input type="hidden" name="__member_csrf" value="' . htmlspecialchars($_SESSION['member_csrf_token'] ?? '', ENT_QUOTES) . '" />' . "\n";
         $_form .= '</form>' . "\n";
         if ($sysconf['password_policy_strong']) {
             $_form .= simbio_security::validatePasswordFunctionJS();
@@ -565,6 +605,7 @@ if ($is_member_login) :
         $_loan_list->using_AJAX = false;
         // return the result
         $_result = '<form name="memberBasketListForm" id="memberBasketListForm" action="index.php?p=member" method="post">' . "\n";
+        $_result .= '<input type="hidden" name="__member_csrf" value="' . htmlspecialchars($_SESSION['member_csrf_token'] ?? '', ENT_QUOTES) . '" />' . "\n";
         $_datagrid = $_loan_list->createDataGrid($dbs, $_table_spec, $num_recs_show);
         $_actions = '<div class="memberBasketAction my-3">';
         $_actions .= '<a href="index.php?p=member&sec=title_basket" class="btn btn-sm btn-primary basket reserve"><i class="fa fa-save"></i>&nbsp;&nbsp;' . __('Reserve title(s) on Basket') . '</a> ';
@@ -744,7 +785,7 @@ if ($is_member_login) :
     }
 
     // if there is change password request
-    if (isset($_POST['changePass']) && config('auth.sections.member') == 'native') {
+    if (isset($_POST['changePass']) && config('auth.sections.member') == 'native' && memberCsrfValid()) {
         $change_pass = procChangePassword($_POST['currPass'], $_POST['newPass'], $_POST['newPass2']);
         if ($change_pass === true) {
             $info = '<span style="font-size: 120%; font-weight: bold; color: #28a745;">' . __('Your password have been changed successfully.') . '</span>';
@@ -762,6 +803,12 @@ if ($is_member_login) :
 
     // send reserve e-mail
     if (isset($_POST['sendReserve']) && $_POST['sendReserve'] == 1) {
+        if (!memberCsrfValid()) {
+            header('content-type: application/json');
+            http_response_code(403);
+            echo json_encode(['status' => 'ERROR', 'message' => __('Invalid or missing security token. Please reload the page and try again.')]);
+            exit;
+        }
         // Make a notification for librarian or member
         \SLiMS\Plugins::getInstance()->execute('custom_reserve_notification');
         // save reservation to database
@@ -921,6 +968,21 @@ if ($is_member_login) :
     </div>
 
     <script type="text/javascript">
+        // Ensure member AJAX actions carry the CSRF token even on themes that
+        // do not ship the global hook in their own JS bundle.
+        (function () {
+            if (window.__slimsMemberCsrfHookInstalled) return;
+            var token = <?= json_encode($_SESSION['member_csrf_token'] ?? '') ?>;
+            if (!token || typeof $ === 'undefined' || !$.ajaxSetup) return;
+            window.__slimsMemberCsrfHookInstalled = true;
+            $(document).ajaxSend(function (event, jqxhr, settings) {
+                var method = (settings.type || settings.method || 'GET').toUpperCase();
+                if (method === 'GET' || method === 'HEAD') return;
+                var url = settings.url || '';
+                if (/^https?:\/\//i.test(url) && url.indexOf(window.location.origin) !== 0) return;
+                jqxhr.setRequestHeader('X-SLiMS-Member-CSRF', token);
+            });
+        })();
         $(document).ready(function () {
                 $('.clearAll').click(function (evt) {
                     evt.preventDefault();

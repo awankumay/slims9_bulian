@@ -11,7 +11,7 @@
 
 class Controller
 {
- 
+
     public function withJson($data)
     {
         header('Content-type: application/json');
@@ -23,5 +23,29 @@ class Controller
 
         return true;
     }
-    
+
+    /**
+     * Guard endpoints that expose library-wide statistics.
+     *
+     * These routes are only consumed by the staff dashboard, which now reads
+     * the figures server-side. The HTTP endpoints are reached through the OPAC
+     * (public) context, so a staff session ($_SESSION['uid']) is never present
+     * there and an anonymous visitor is refused. This keeps aggregate counts
+     * from being harvested without authentication.
+     *
+     * @return void
+     */
+    protected function requireStaff()
+    {
+        if (empty($_SESSION['uid'])) {
+            header('HTTP/1.1 403 Forbidden');
+            header('Content-type: application/json');
+            echo json_encode([
+                'error' => 'Forbidden',
+                'message' => 'Staff authentication required'
+            ]);
+            exit();
+        }
+    }
+
 }

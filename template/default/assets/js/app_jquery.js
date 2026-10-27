@@ -1,5 +1,24 @@
 'use strict';
 
+// Attach the member-area CSRF token to every same-origin, state-changing
+// (non-GET) jQuery AJAX request. The token is printed in a meta tag for a
+// logged-in member; state-changing member actions validate it server-side.
+(function () {
+    if (window.__slimsMemberCsrfHookInstalled) return;
+    var meta = document.querySelector('meta[name="slims-member-csrf"]');
+    var token = meta ? meta.getAttribute('content') : '';
+    if (!token || typeof $ === 'undefined' || !$.ajaxSetup) return;
+    window.__slimsMemberCsrfHookInstalled = true;
+    $(document).ajaxSend(function (event, jqxhr, settings) {
+        var method = (settings.type || settings.method || 'GET').toUpperCase();
+        if (method === 'GET' || method === 'HEAD') return;
+        // Only same-origin requests (relative URLs, or the current origin).
+        var url = settings.url || '';
+        if (/^https?:\/\//i.test(url) && url.indexOf(window.location.origin) !== 0) return;
+        jqxhr.setRequestHeader('X-SLiMS-Member-CSRF', token);
+    });
+})();
+
 $(document).ready(() => {
     // 65x83
     var images = $('.fit-height');

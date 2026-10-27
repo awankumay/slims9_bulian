@@ -20,15 +20,20 @@ class LoanController extends Controller
         $this->db = $obj_db;
     }
 
+    function getSummaryData() {
+        return [
+            'total' => $this->getTotal(),
+            'new' => $this->getNew(),
+            'return' => $this->getReturn(),
+            'extend' => $this->getExtends(),
+            'overdue' => $this->getOverdue()
+        ];
+    }
+
     function getSummary() {
+        parent::requireStaff();
         parent::withJson([
-            'data' => [
-                'total' => $this->getTotal(),
-                'new' => $this->getNew(),
-                'return' => $this->getReturn(),
-                'extend' => $this->getExtends(),
-                'overdue' => $this->getOverdue()
-            ]
+            'data' => $this->getSummaryData()
         ]);
     }
 
@@ -59,6 +64,9 @@ class LoanController extends Controller
 
     public function getDate($start_date, $print = true)
     {
+        // Only guard the HTTP endpoint path. The dashboard calls this method
+        // internally with $print = false and must not be refused.
+        if ($print) parent::requireStaff();
         $sql = "SELECT DATE_FORMAT(loan_date,'%d/%m') AS loandate, loan_date
             FROM loan WHERE loan_date BETWEEN DATE_SUB('".$start_date."', INTERVAL 8 DAY) AND '".$start_date."' 
             GROUP BY loan_date ORDER BY loan_date";
@@ -73,7 +81,7 @@ class LoanController extends Controller
         return $date;
     }
 
-    public function getSummaryDate($date)
+    public function getSummaryDateData($date)
     {
 
         $dates = $this->getDate($date, false);
@@ -138,8 +146,14 @@ class LoanController extends Controller
             }
         }
 
+        return $return;
+    }
+
+    public function getSummaryDate($date)
+    {
+        parent::requireStaff();
         parent::withJson([
-            'data' => $return
+            'data' => $this->getSummaryDateData($date)
         ]);
     }
 }
