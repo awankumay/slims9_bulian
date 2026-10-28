@@ -30,3 +30,8 @@ audit-reports
 # Sample files that should not be served
 js/quaggaJS/server.pem
 js/quaggaJS/simple-https-server.py
+
+# Host-side operation scripts and their output
+setup.sh
+slims.sh
+backups
