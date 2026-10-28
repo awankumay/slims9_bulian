@@ -71,7 +71,7 @@ include LIB . "contents/chat.php"; ?>
 <!-- // load our vue app.js -->
 <script src="<?php echo assets(v('js/app.js')); ?>"></script>
 <script src="<?php echo assets(v('js/app_jquery.js')); ?>"></script>
-<script src="<?php echo bk_assets(v('js/bulian-kampus.js')); ?>"></script>
+<script src="<?php echo bk_assets_v('js/bulian-kampus.js'); ?>"></script>
 <?php if ($sysconf['chat_system']['enabled'] && $sysconf['chat_system']['opac']) : ?>
     <script>
         $('#show-pchat').click(() => {

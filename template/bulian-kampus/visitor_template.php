@@ -131,4 +131,4 @@ $bk_kiosk_conf = [
 <script>
 window.BK_KIOSK = <?= json_encode($bk_kiosk_conf, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
-<script src="<?= bk_assets(v('js/kiosk.js')) ?>"></script>
+<script src="<?= bk_assets_v('js/kiosk.js') ?>"></script>
