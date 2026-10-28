@@ -105,9 +105,11 @@
                 var raw = String(res.message || '');
                 var message = plain(raw);
                 var kind = 'ok';
-                if (raw.indexOf('visitor-error') !== -1) kind = 'warn';
+                if (res.code === 'expired' || raw.indexOf('visitor-error') !== -1) kind = 'warn';
                 if (res.status === 'error') kind = 'error';
-                if (!institution && message === plain(T.needInstitution)) {
+                // server baru mengirim code; versi lama hanya teks pesan
+                var needInstitution = res.code ? res.code === 'need_institution' : message === plain(T.needInstitution);
+                if (!institution && needInstitution) {
                     // ID tidak terdaftar: arahkan ke form tamu
                     kind = 'warn';
                     if (guest) { guest.open = true; $('bk-guest-name').value = memberId; $('bk-guest-inst').focus(); }

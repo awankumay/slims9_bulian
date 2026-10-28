@@ -40,17 +40,66 @@ class Visitor
     /**
      * Access check by ip
      *
+     * Rule format (Sistem > Allowed Counter IP, separated with ;):
+     * exact ip (192.168.1.10), wildcard (192.168.1.*), prefix ending
+     * with a dot (192.168.1.) or CIDR (192.168.1.0/24).
+     *
      * @return Visitor
      */
     public function accessCheck()
     {
-        foreach ($this->allowedIp as $ip) {
-        // change wildcard
-            $ip = preg_replace('@\*$@i', '.', $ip);
-            if ($ip == ip() || $_SERVER['HTTP_HOST'] == 'localhost' || preg_match("@$ip@i", ip())) $this->accessAllow = true;
+        $client = (string)ip();
+        foreach ($this->allowedIp as $rule) {
+            if (static::ipMatches((string)$rule, $client)) {
+                $this->accessAllow = true;
+                break;
+            }
         }
 
         return $this;
+    }
+
+    /**
+     * Match client ip against one allowed ip rule
+     *
+     * @param string $rule
+     * @param string $client
+     * @return bool
+     */
+    public static function ipMatches(string $rule, string $client): bool
+    {
+        $rule = strtolower(trim($rule));
+        $client = strtolower(trim($client));
+        if ($rule === '' || $client === '') return false;
+
+        // the server itself
+        if (in_array($rule, ['localhost', '127.0.0.1', '::1']) && in_array($client, ['127.0.0.1', '::1'])) return true;
+
+        if ($rule === $client) return true;
+
+        // CIDR
+        if (strpos($rule, '/') !== false) {
+            [$subnet, $bits] = explode('/', $rule, 2);
+            $subnet = inet_pton($subnet);
+            $address = inet_pton($client);
+            if ($subnet === false || $address === false || strlen($subnet) !== strlen($address) || !ctype_digit($bits)) return false;
+            $bits = (int)$bits;
+            if ($bits > strlen($subnet) * 8) return false;
+            $bytes = intdiv($bits, 8);
+            if (substr($subnet, 0, $bytes) !== substr($address, 0, $bytes)) return false;
+            if ($bits % 8 === 0) return true;
+            $mask = (0xff << (8 - $bits % 8)) & 0xff;
+            return (ord($subnet[$bytes]) & $mask) === (ord($address[$bytes]) & $mask);
+        }
+
+        // wildcard (192.168.1.*) or prefix (192.168.1.)
+        if (substr($rule, -1) === '.') $rule .= '*';
+        if (strpos($rule, '*') !== false) {
+            $pattern = '/^' . str_replace('\\*', '[0-9a-f:.]*', preg_quote($rule, '/')) . '$/';
+            return (bool)preg_match($pattern, $client);
+        }
+
+        return false;
     }
 
     /**
@@ -65,37 +114,36 @@ class Visitor
         //DB::debug();
 
         try {
+            $memberId = static::cleanText($memberId, 100);
+            $institution = static::cleanText($_POST['institution'] ?? '', 100);
+
             $query = "SELECT member_id,member_name,member_image,inst_name, IF(TO_DAYS('".date('Y-m-d')."')>TO_DAYS(expire_date), 1, 0) AS is_expire FROM member WHERE member_id = ?";
             $statement = $db->prepare($query);
             $statement->execute([$memberId]);
 
             // room code check
-            if (isset($_GET['room']) && strlen($_GET['room']) > 5) throw new \PDOException("Room code is not valid!");
+            $roomCode = $this->roomCode();
 
             // Member
             if ($statement->rowCount() > 0)
             {
                 $this->member = true;
-                $data = $statement->fetch(\PDO::FETCH_NUM);
+                $member = $statement->fetch(\PDO::FETCH_ASSOC);
                 
                 // set image based on record data
-                $this->image = $data[2]??'person.png';
+                $this->image = $member['member_image']??'person.png';
 
                 // set expire status
-                if ($data[4] == 1) $this->memberExpire = true;
-                
-                // unset image and expire status
-                unset($data[4]);
-                unset($data[2]);
+                if ($member['is_expire'] == 1) $this->memberExpire = true;
 
-                $this->data = array_values($data);
-                Plugins::getInstance()->execute('MEMBER_ON_VISIT', ['data' => $statement->fetch(\PDO::FETCH_ASSOC)]);
+                $this->data = [$member['member_id'], $member['member_name'], $member['inst_name']];
+                Plugins::getInstance()->execute('MEMBER_ON_VISIT', ['data' => $member]);
             }
             // Guest
             else
             {
                 // institution check for guest
-                if (empty(trim($_POST['institution'])))
+                if ($institution === '')
                 {
                     $this->institutionEmpty = true;
                     return $this;
@@ -103,7 +151,7 @@ class Visitor
 
                 // default non member photos
                 $this->image = 'non_member.png';
-                $this->data = [ null, $memberId,trim($_POST['institution'])];
+                $this->data = [ null, $memberId, $institution];
                 Plugins::getInstance()->execute('NON_MEMBER_ON_VISIT', ['data' => array_slice($this->data, 1)]);
             }
 
@@ -118,7 +166,7 @@ class Visitor
             }
             else
             {
-                $this->result = $insertStatement->execute(array_merge($this->data, [$_GET['room']??null, date('Y-m-d H:i:s')]));
+                $this->result = $insertStatement->execute(array_merge($this->data, [$roomCode, date('Y-m-d H:i:s')]));
             }
         } catch (\PDOException $e) {
             // set error
@@ -127,6 +175,78 @@ class Visitor
         }
 
         return $this;
+    }
+
+    /**
+     * Normalize text from the visitor form.
+     * Global Sanitizer already escaped it for SQL, but this class
+     * uses prepared statements, so remove the extra slashes.
+     *
+     * @param mixed $value
+     * @param int $maxLength
+     * @return string
+     */
+    public static function cleanText($value, int $maxLength): string
+    {
+        if (!is_scalar($value)) return '';
+        $value = stripslashes((string)$value);
+        $value = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $value) ?? '');
+        return mb_substr($value, 0, $maxLength);
+    }
+
+    /**
+     * Room code from ?room=, must be registered
+     * at Master File > Visitor Room
+     *
+     * @return string|null
+     */
+    protected function roomCode()
+    {
+        $room = trim((string)(is_scalar($_GET['room'] ?? null) ? $_GET['room'] : ''));
+        if ($room === '') return null;
+
+        $statement = DB::getInstance()->prepare('SELECT unique_code FROM mst_visitor_room WHERE unique_code = ?');
+        $statement->execute([$room]);
+        $code = $statement->fetchColumn();
+        if ($code === false) throw new \PDOException("Room code is not valid!");
+
+        return $code;
+    }
+
+    /**
+     * Simple per ip limit for visitor counter POST,
+     * $limit request per minute, 0 = no limit.
+     * Fails open when the cache folder is not writable.
+     *
+     * @param int $limit
+     * @return bool
+     */
+    public function withinRateLimit(int $limit): bool
+    {
+        if ($limit <= 0) return true;
+
+        $dir = SB . 'files' . DS . 'cache' . DS . 'visitor-rate';
+        if (!is_dir($dir)) {
+            $parent = dirname($dir);
+            if (!is_dir($parent) && (!is_writable(dirname($parent)) || !mkdir($parent, 0755))) return true;
+            if (!is_writable($parent) || !mkdir($dir, 0755)) return true;
+        }
+        if (!is_writable($dir)) return true;
+
+        $handle = fopen($dir . DS . sha1((string)ip()) . '.txt', 'c+');
+        if ($handle === false) return true;
+
+        flock($handle, LOCK_EX);
+        $window = (int)floor(time() / 60);
+        [$savedWindow, $count] = array_map('intval', explode(' ', trim((string)stream_get_contents($handle)) . ' 0 0'));
+        $count = $savedWindow === $window ? $count + 1 : 1;
+        ftruncate($handle, 0);
+        rewind($handle);
+        fwrite($handle, $window . ' ' . $count);
+        flock($handle, LOCK_UN);
+        fclose($handle);
+
+        return $count <= $limit;
     }
 
     /**
@@ -149,7 +269,7 @@ class Visitor
         if ($statement->rowCount() > 0) {
             $data = $statement->fetchObject();
             $time = new \DateTime($data->checkin_date);
-            $time->add(new \DateInterval('PT'.$this->visitTimeLimit.'M'));
+            $time->add(new \DateInterval('PT'.max(0, (int)$this->visitTimeLimit).'M'));
             $timelimit = $time->format('Y-m-d H:i:s');
             $now = date('Y-m-d H:i:s');
             if ($now < $timelimit) {

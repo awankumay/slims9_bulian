@@ -48,6 +48,22 @@ Alamat kiosk: `index.php?p=visitor` (bisa ditambah `&room=KODE`).
 - Pencatatan tetap lewat `lib/contents/visitor.inc.php`; aturan IP kiosk
   (`allowed_counter_ip`) dan batas kunjungan berlaku seperti biasa.
 
+### Keamanan kiosk
+
+- **Sistem → Pengaturan → Allowed Counter IP**: isi IP perangkat kiosk saja,
+  dipisah `;`. Format: `192.168.1.20`, `192.168.1.*`, `192.168.1.` atau
+  `192.168.1.0/24`. Akses dari server sendiri (`127.0.0.1`/`::1`) cocok
+  dengan aturan `127.0.0.1` atau `localhost`.
+- **Visitor Limitation by Time**: aktifkan. Penahan pindai ganda di kiosk hanya
+  berjalan di peramban; batas kunjungan di server yang mencegah data ganda.
+- `$sysconf['visitor_rate_limit']` (bawaan 60 POST per menit per IP) menahan
+  tebakan nomor anggota. Naikkan bila satu kiosk melayani antrean sangat padat.
+- Server produksi: `config/env.php` harus `production` agar pesan error teknis
+  tidak terkirim ke kiosk.
+- Mode load balancer (`config/loadbalanced.php`) mengambil IP dari
+  `X-Forwarded-For`. Aktifkan hanya bila proxy menimpa header itu, karena
+  klien bisa memalsukannya.
+
 ## 3. Kartu anggota `bulian-kartu`
 
 Lokasi: `files/membercard/bulian-kartu/`. Aktifkan lewat **Keanggotaan → Cetak
