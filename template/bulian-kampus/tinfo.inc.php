@@ -85,8 +85,9 @@ $sysconf['template']['option'][$sysconf['template']['theme']] = [
     ],
     'ministry-logo' => [
         'dbfield' => 'bk_ministry_logo',
-        'label' => 'Logo kementerian (URL atau path, mis. images/default/logo-kementerian.png). Kosong = tidak tampil',
-        'type' => 'text',
+        'label' => 'Logo kementerian',
+        'info' => 'Unggah file, atau isi URL (https://...) / path (mis. images/default/logo-kementerian.png). File unggahan menggantikan isian. Kosongkan isian = tidak tampil.',
+        'type' => 'image',
         'default' => '',
         'width' => '100'
     ],

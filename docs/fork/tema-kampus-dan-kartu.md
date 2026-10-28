@@ -14,7 +14,7 @@ Aktifkan lewat **Sistem → Tema → bulian-kampus → Aktifkan**, lalu **Kustom
 | Opsi | Keterangan |
 |---|---|
 | Nama perguruan tinggi, nama kementerian | Tampil di strip "Laman resmi", kepala halaman, dan footer. Nama perpustakaan diambil dari Sistem → Pengaturan. |
-| Logo kementerian | Path relatif (mis. `images/default/logo-kementerian.png`) atau URL `https://`. Logo kampus memakai logo perpustakaan di Sistem → Pengaturan. Logo kementerian tampil di **kanan** logo kampus. |
+| Logo kementerian | Unggah file gambar (JPG/PNG/GIF, maks. sesuai `max_image_upload`), atau isi URL `https://` / path relatif (mis. `images/default/logo-kementerian.png`). File unggahan disimpan di `images/default/` dan menggantikan isian. Domain URL eksternal otomatis diizinkan di CSP `img-src`. Logo kampus memakai logo perpustakaan di Sistem → Pengaturan. Logo kementerian tampil di **kanan** logo kampus. |
 | Warna utama, warna aksen | Pilihan warna yang aman kontras. |
 | Jam layanan, maklumat pelayanan, alamat | Teks beranda dan footer. |
 | Tautan standar pelayanan, SKM, hasil SKM, SP4N-LAPOR!, PPID, kebijakan privasi | Kosong = tidak ditampilkan. |

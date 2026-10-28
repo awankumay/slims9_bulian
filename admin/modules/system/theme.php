@@ -96,11 +96,42 @@ if (isset($_POST['updateData'])) {
   if (file_exists($path)) {
     include_once $path;
     if (isset($sysconf[$theme_key]['option'][$theme_dir])) {
+      // stored values, so a replaced upload can be cleaned up
+      utility::loadSettings($dbs);
       $data = ['theme' => $sysconf[$theme_key]['theme'], 'css' => $sysconf[$theme_key]['css']];
+      $imagesDisk = \SLiMS\Filesystems\Storage::images();
       foreach ($sysconf[$theme_key]['option'][$theme_dir] as $fid => $cfield) {
         $cf_dbfield = $cfield['dbfield'];
         if (isset($_POST[$cf_dbfield])) {
           $data[$cf_dbfield] = $dbs->escape_string(strip_tags(trim($_POST[$cf_dbfield]), $sysconf['content']['allowable_tags']));
+        }
+        if ($cfield['type'] != 'image') continue;
+        // image field: an uploaded file wins over the URL/path typed in the text box
+        $old_image = (string)($sysconf[$theme_key][$cf_dbfield] ?? '');
+        $file_field = $cf_dbfield . '_file';
+        if (!empty($_FILES[$file_field]['name'])) {
+          $upload = $imagesDisk->upload($file_field, function($image) use($sysconf) {
+            $image->isExtensionAllowed($sysconf['allowed_images']);
+            $image->isLimitExceeded($sysconf['max_image_upload'] * 1024);
+            $image->isMimeAllowed($sysconf['allowed_images_mimetype']);
+            $image->isImageFile();
+            if (empty($image->getError())) {
+              $image->cleanExifInfo();
+              $image->sanitizeImageWithGD();
+            }
+            if (!empty($image->getError())) {
+              $image->destroyIfFailed();
+            }
+          })->as('default' . DS . 'theme-' . preg_replace('/[^a-z0-9_-]/i', '', $cf_dbfield) . '-' . time());
+          if (!$upload->getUploadStatus()) {
+            toastr(__('Image Uploaded Failed') . ' : ' . $cfield['label'] . '<br/>' . $upload->getError())->error();
+            exit();
+          }
+          $data[$cf_dbfield] = 'images/default/' . $upload->getUploadedFileName();
+        }
+        // drop the previously uploaded file once it is replaced or cleared
+        if (preg_match('@^images/default/(theme-[A-Za-z0-9_-]+\.[A-Za-z]+)$@', $old_image, $m) && ($data[$cf_dbfield] ?? '') !== $old_image && $imagesDisk->isExists('default/' . $m[1])) {
+          $imagesDisk->delete('default/' . $m[1]);
         }
       }
       $update = addOrUpdateSetting($theme_key, $data);
@@ -158,6 +189,21 @@ if (isset($_GET['customize'])) {
         if (in_array($cfield['type'], array('text', 'longtext', 'numeric'))) {
           $cf_max = isset($cfield['max']) ? $cfield['max'] : '200';
           $form->addTextField(($cfield['type'] == 'longtext') ? 'textarea' : 'text', $cf_dbfield, $cf_label, isset($sysconf[$theme_key][$cf_dbfield]) ? $sysconf[$theme_key][$cf_dbfield] : $cf_default, 'class="form-control '.$cf_class.'" style="width: ' . $cf_width . '%;" maxlength="' . $cf_max . '"');
+        } else if ($cfield['type'] == 'image') {
+          // URL/path text box plus an optional upload that replaces it on save
+          $cf_value = (string)(isset($sysconf[$theme_key][$cf_dbfield]) ? $sysconf[$theme_key][$cf_dbfield] : $cf_default);
+          $cf_input = '';
+          if ($cf_value !== '') {
+            $cf_src = preg_match('@^https?://@i', $cf_value) ? $cf_value : SWB . ltrim($cf_value, '/');
+            $cf_input .= '<div class="mb-2"><img src="' . htmlspecialchars($cf_src, ENT_QUOTES) . '" alt="" style="max-height: 60px; max-width: 200px;" class="rounded border p-1"></div>';
+          }
+          $cf_input .= simbio_form_element::textField('text', $cf_dbfield, $cf_value, 'class="form-control" style="width: ' . $cf_width . '%;" maxlength="255" placeholder="https://... ' . __('or') . ' images/default/..."');
+          $cf_input .= '<div class="custom-file mt-2" style="max-width: 400px;">';
+          $cf_input .= simbio_form_element::textField('file', $cf_dbfield . '_file', '', 'class="custom-file-input" accept=".jpg,.jpeg,.png,.gif"');
+          $cf_input .= '<label class="custom-file-label" for="' . $cf_dbfield . '_file">' . __('Choose file') . '</label>';
+          $cf_input .= '</div>';
+          $cf_input .= '<div class="mt-1 small text-muted">' . ($cfield['info'] ?? '') . ' Maximum ' . $sysconf['max_image_upload'] . ' KB</div>';
+          $form->addAnything($cf_label, $cf_input);
         } else if ($cfield['type'] == 'dropdown') {
           $value = $cf_default;
           if (isset($sysconf[$theme_key][$cf_dbfield])) {
@@ -192,6 +238,7 @@ if (isset($_GET['customize'])) {
   $js .= '<script type="text/javascript" src="'.JWB.'/ckeditor5/ckeditor.js"></script>';
   $js .= '<script type="text/javascript" src="'.JWB.'/ckeditor5/ckeditor.tinfo.js"></script>';
   $js .= '<script type="text/javascript">$(function () {  $(\'.colorpicker\').colorpicker() })</script>';
+  $js .= '<script type="text/javascript">$(\'.custom-file input\').on(\'change\', function () { $(this).next(\'.custom-file-label\').text(this.files.length ? this.files[0].name : \'\') })</script>';
   if (isset($ckCount)):
   $js .= "<script>createMultiEditor('{$ckCount}', '#mainForm')</script>";
   endif;
