@@ -62,7 +62,8 @@ if (isset($_POST['confirmFinish'])) {
   $stk_take_d = $stk_take_q->fetch_row();
   // update stock take finish time
   $finish_time_q = $dbs->query('UPDATE stock_take SET end_date=NOW() WHERE is_active=1');
-  $stk_take_report_filename = strtolower(str_replace(' ', '_', trim($stk_take_d[0]))).'_report.html';
+  require_once SB.'admin/default/print_result_file.inc.php';
+  $stk_take_report_filename = slimsPrintResultName(REPBS, 'stock_take_finish_report', $_SESSION['uname'] ?? '');
   if ($dbs->affected_rows) {
     // purge item data
     if (isset($_POST['purge']) AND !empty($_POST['purge'])) {

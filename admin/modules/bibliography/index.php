@@ -758,7 +758,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'history') {
     }
     /* RECORD FORM */
     // try query
-    $itemID = (integer)isset($_POST['itemID']) ? $_POST['itemID'] : 0;
+    $itemID = (int)($_POST['itemID'] ?? 0);
     $_sql_rec_q = sprintf('SELECT b.*, p.publisher_name, pl.place_name FROM biblio AS b
     LEFT JOIN mst_publisher AS p ON b.publisher_id=p.publisher_id
     LEFT JOIN mst_place AS pl ON b.publish_place_id=pl.place_id

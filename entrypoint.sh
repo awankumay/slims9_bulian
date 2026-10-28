@@ -59,6 +59,15 @@ for name in csp auth; do
     fi
 done
 
+# The files volume keeps whatever the first image put in it, so member card
+# templates (PHP code) would never be updated and stay writable by www-data.
+# Refresh them from this image and keep them root-owned. Extra files added to
+# the volume, such as a custom logo, are kept.
+mkdir -p "$APP_DIR/files/membercard"
+cp -a /usr/src/slims-membercard/. "$APP_DIR/files/membercard/"
+chown -R root:root "$APP_DIR/files/membercard"
+chmod -R go-w "$APP_DIR/files/membercard"
+
 # Behind Cloudflare Tunnel every request comes from cloudflared. Take the client
 # IP from CF-Connecting-IP, but only from the trusted proxy address, so the
 # header cannot be spoofed through the published HTTP port.

@@ -32,6 +32,10 @@ COPY . /var/www/html
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
+# Member card templates are PHP loaded with require_once from the files volume.
+# Keep a root-owned copy so entrypoint.sh can refresh the volume on every start.
+RUN cp -a /var/www/html/files/membercard /usr/src/slims-membercard
+
 RUN chown -R www-data:www-data /var/www/html/files
 RUN chown -R www-data:www-data /var/www/html/images
 RUN chown -R www-data:www-data /var/www/html/repository

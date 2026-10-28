@@ -233,7 +233,15 @@ class Visitor
         }
         if (!is_writable($dir)) return true;
 
-        $handle = fopen($dir . DS . sha1((string)ip()) . '.txt', 'c+');
+        // one window file per client; drop stale ones now and then so the folder does not grow
+        // ponytail: probabilistic cleanup, move to a cron job if the folder still grows too much
+        if (random_int(1, 100) === 1) {
+            foreach (glob($dir . DS . '*.txt') ?: [] as $old) {
+                if (filemtime($old) < time() - 120) @unlink($old);
+            }
+        }
+
+        $handle = fopen($dir . DS . sha1(self::rateLimitKey((string)ip())) . '.txt', 'c+');
         if ($handle === false) return true;
 
         flock($handle, LOCK_EX);
@@ -247,6 +255,19 @@ class Visitor
         fclose($handle);
 
         return $count <= $limit;
+    }
+
+    /**
+     * IPv6 clients usually own a whole /64, so count them per /64.
+     *
+     * @param string $ip
+     * @return string
+     */
+    public static function rateLimitKey(string $ip): string
+    {
+        $packed = @inet_pton($ip);
+        if ($packed !== false && strlen($packed) === 16) return bin2hex(substr($packed, 0, 8)) . '::/64';
+        return $ip;
     }
 
     /**

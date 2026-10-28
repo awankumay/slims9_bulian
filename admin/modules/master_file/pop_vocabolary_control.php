@@ -45,8 +45,8 @@ $can_read = utility::havePrivilege('master_file', 'r');
 $can_write = utility::havePrivilege('master_file', 'w');
 
 // GET ID FROM URL
-$itemID = (integer)isset($_GET['itemID'])?$_GET['itemID']:0;
-$vocID = (integer)isset($_GET['vocID'])?$_GET['vocID']:0;
+$itemID = (int)($_GET['itemID'] ?? 0);
+$vocID = (int)($_GET['vocID'] ?? 0);
 
 // start buffer
 ob_start();
@@ -79,8 +79,8 @@ if (isset($_POST['relatedterm']) AND (isset($_POST['topicID']) OR isset($_POST['
     $sql_op = new simbio_dbop($dbs);
 
     # curent item_id/topicID
-    $itemID = (integer)isset($_GET['itemID'])?$_GET['itemID']:0;
-    $vocID = (integer)isset($_GET['vocID'])?$_GET['vocID']:0;
+    $itemID = (int)($_GET['itemID'] ?? 0);
+    $vocID = (int)($_GET['vocID'] ?? 0);
 
     # alert sucsess add
     $alert_add  = '<script type="text/javascript">';
@@ -182,8 +182,8 @@ if (isset($_GET['editTopic'])) {
         die('<div class="errorBox">'.__('You don\'t have enough privileges to access this area!').'</div>');
     }
     // record form
-    $itemID = (integer)isset($_GET['itemID'])?$_GET['itemID']:0;
-    $vocID = (integer)isset($_GET['vocID'])?$_GET['vocID']:0;
+    $itemID = (int)($_GET['itemID'] ?? 0);
+    $vocID = (int)($_GET['vocID'] ?? 0);
     $rec_q = $dbs->query('SELECT * FROM mst_voc_ctrl WHERE vocabolary_id=' . $dbs->real_escape_string($vocID) . ' AND topic_id=' . $dbs->real_escape_string($itemID));
     $rec_d = $rec_q->fetch_assoc();
     $topic_name = '';

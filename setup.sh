@@ -38,7 +38,8 @@ else
     read -r -p "HTTP port on this host [8881]: " port
     set_env HTTP_PORT "${port:-8881}"
 
-    read -r -p "Cloudflare Tunnel token (empty = no tunnel): " token
+    read -rs -p "Cloudflare Tunnel token (empty = no tunnel, input hidden): " token
+    echo
     if [ -n "$token" ]; then
         set_env COMPOSE_PROFILES tunnel
         set_env CLOUDFLARE_TUNNEL_TOKEN "$token"
