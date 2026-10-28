@@ -15,6 +15,10 @@
     var title = $('bk-result-title');
     var text = $('bk-result-text');
     var guest = $('bk-guest');
+    var device = $('bk-device');
+    var deviceBtn = $('bk-device-btn');
+    // tombol pengaturan boleh memegang fokus sebentar (untuk ditahan lewat keyboard)
+    var deviceKeep = 0;
     var stateText = state.querySelector('.bk-kiosk__state-text');
     var idle = { title: title.textContent, text: text.textContent, state: stateText.textContent };
     // foto bawaan SLiMS untuk anggota tanpa foto / tamu: tampilkan ikon saja
@@ -86,6 +90,8 @@
 
     function focusInput() {
         if (guest && guest.open) return;
+        if (device && device.open) return;
+        if (deviceBtn && document.activeElement === deviceBtn && (Date.now() < deviceKeep || deviceBtn.classList.contains('is-holding'))) return;
         if (document.activeElement !== input) input.focus({ preventScroll: true });
     }
 
@@ -190,7 +196,7 @@
     // pemindai USB mengetik ke elemen yang sedang fokus; jaga fokus di kolom ID
     input.addEventListener('blur', function () { setTimeout(focusInput, 400); });
     document.addEventListener('click', function (ev) {
-        if (!ev.target.closest('#bk-guest, #bk-cam-toggle, a, button, input, summary')) focusInput();
+        if (!ev.target.closest('#bk-guest, #bk-cam-toggle, #bk-device, a, button, input, summary')) focusInput();
     });
 
     // ---------------------------------------------------------------- kamera
@@ -259,6 +265,62 @@
         });
     }
     if (conf.autoCamera && camWrap) startCamera();
+
+    // ------------------------------------------------- pengaturan perangkat
+
+    // tombol harus ditahan 2 detik (mouse, sentuh, atau Enter/Spasi ditahan)
+    var deviceHint = $('bk-device-hint');
+    if (deviceBtn && device && device.showModal) {
+        var holdTimer = null;
+        var hintTimer = null;
+        var opened = false;
+        var hold = function (ev) {
+            if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+            ev.preventDefault();
+            if (holdTimer) return;
+            opened = false;
+            deviceBtn.classList.add('is-holding');
+            holdTimer = setTimeout(function () {
+                holdTimer = null;
+                opened = true;
+                deviceBtn.classList.remove('is-holding');
+                deviceHint.textContent = '';
+                device.showModal();
+            }, 2000);
+        };
+        var release = function () {
+            if (!holdTimer) return;
+            clearTimeout(holdTimer);
+            holdTimer = null;
+            deviceBtn.classList.remove('is-holding');
+            if (opened) return;
+            setTimeout(focusInput, 3000);
+            deviceHint.textContent = T.holdHint;
+            clearTimeout(hintTimer);
+            hintTimer = setTimeout(function () { deviceHint.textContent = ''; }, 3000);
+        };
+        deviceBtn.addEventListener('pointerdown', hold);
+        deviceBtn.addEventListener('keydown', hold);
+        ['pointerup', 'pointerleave', 'pointercancel', 'keyup', 'blur'].forEach(function (type) {
+            deviceBtn.addEventListener(type, release);
+        });
+        deviceBtn.addEventListener('focus', function () {
+            deviceKeep = Date.now() + 4000;
+            setTimeout(focusInput, 4100);
+        });
+        deviceBtn.addEventListener('blur', function () { setTimeout(focusInput, 400); });
+        deviceBtn.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
+
+        device.addEventListener('close', function () {
+            if (device.returnValue !== 'save') { focusInput(); return; }
+            var picked = device.querySelector('input[name="bk-device-layout"]:checked');
+            var layout = picked ? picked.value : conf.layout;
+            try { localStorage.setItem(conf.storeKey, JSON.stringify({ room: conf.room, layout: layout })); } catch (e) {}
+            location.href = 'index.php?p=visitor' +
+                (conf.room ? '&room=' + encodeURIComponent(conf.room) : (conf.hasRooms ? '&noroom=1' : '')) +
+                '&layout=' + layout;
+        });
+    }
 
     // ----------------------------------------------------------------- jam
 

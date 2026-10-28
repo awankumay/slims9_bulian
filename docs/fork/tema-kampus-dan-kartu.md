@@ -44,6 +44,44 @@ ponsel dialihkan ke tema `lightweight`.
 Alamat kiosk: `index.php?p=visitor` (bisa ditambah `&room=KODE`; nama ruang
 tampil di pojok layar bila kodenya terdaftar).
 
+### Memasang kiosk per ruang
+
+Bila ada ruang di **Daftar Terkendali → Ruang Pengunjung**, membuka
+`index.php?p=visitor` tanpa `room` menampilkan **halaman pilih ruang**:
+
+1. Pilih tampilan kiosk (`split`, `center`, `camera`).
+2. Klik ruangnya. Kiosk langsung terbuka di
+   `index.php?p=visitor&room=KODE&layout=...`.
+
+Bila *Ingat pilihan di perangkat ini* (footer, bawaan dicentang) aktif, pilihan
+disimpan di peramban perangkat itu (`localStorage`, kunci `bk_kiosk_device`).
+Lain kali `index.php?p=visitor` dibuka di perangkat yang sama, kiosk langsung
+terbuka di ruang tersebut, jadi cukup simpan `index.php?p=visitor` sebagai
+halaman awal peramban kiosk. *Lanjut tanpa ruang* membuka kiosk tanpa kode
+ruang (`&noroom=1`).
+
+- Kode ruang yang tidak terdaftar (`&room=XYZ`) membuka halaman pilih ruang
+  dengan peringatan, tidak lagi kiosk yang gagal mencatat.
+- `index.php?p=visitor&pick=1` selalu menampilkan halaman pilih ruang
+  (mengabaikan pilihan tersimpan).
+- Tanpa ruang terdaftar sama sekali, kiosk terbuka langsung seperti sebelumnya.
+- Halaman ini tidak butuh login admin; daftar nama dan kode ruang ikut terlihat
+  oleh siapa pun yang bisa membuka buku tamu (dibatasi *Allowed Counter IP*).
+
+### Pengaturan perangkat di kiosk
+
+Tombol roda gigi kecil di pojok kanan bawah kiosk membuka *Pengaturan
+perangkat*. Tombol ini harus **ditahan 2 detik** (mouse, sentuh, atau
+Enter/Spasi ditahan) agar pengunjung tidak mengubahnya tanpa sengaja; klik
+singkat hanya menampilkan petunjuk. Di dialognya:
+
+- **Ganti ruang**: kembali ke halaman pilih ruang.
+- **Tampilan**: pilih `split`/`center`/`camera`, lalu *Simpan & muat ulang*.
+  Pilihan disimpan untuk perangkat itu saja.
+
+Ini perlindungan ringan, bukan kunci: siapa pun yang tahu caranya bisa membuka
+dialog. Perangkat kiosk sebaiknya tetap memakai mode kiosk peramban.
+
 Ada tiga tata letak. Pilih bawaan di Kustomisasi tema (*Buku tamu: tata
 letak*), atau timpa per perangkat dengan parameter `layout`, mis. layar
 kamera di pintu masuk dan layar biasa di meja sirkulasi:
