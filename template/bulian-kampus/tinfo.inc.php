@@ -35,6 +35,7 @@ $sysconf['template']['bk_link_sso'] = '';
 
 $sysconf['template']['bk_address'] = '[Alamat lengkap perpustakaan] · [Telepon] · [Email resmi]';
 $sysconf['template']['bk_new_collection'] = 1;
+$sysconf['template']['bk_theme_credit'] = 'show';
 
 // buku tamu (kiosk)
 $sysconf['template']['bk_kiosk_layout'] = 'split';
@@ -155,6 +156,17 @@ $sysconf['template']['option'][$sysconf['template']['theme']] = [
         'type' => 'dropdown',
         'default' => 1,
         'data' => $bk_yes_no
+    ],
+    'theme-credit' => [
+        'dbfield' => 'bk_theme_credit',
+        'label' => 'Kredit pembuat tema di footer (CV. Mitra Coretech)',
+        'type' => 'dropdown',
+        'default' => 'show',
+        'data' => [
+            ['show', 'Tampil'],
+            ['subtle', 'Samar (teks kecil, tautan tetap terlihat)'],
+            ['hide', 'Sembunyi (hanya meta tag "designer" di kepala halaman)'],
+        ]
     ],
     'kiosk-layout' => [
         'dbfield' => 'bk_kiosk_layout',

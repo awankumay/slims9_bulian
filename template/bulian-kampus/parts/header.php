@@ -28,6 +28,7 @@ $request_uri = urlencode(strip_tags(urldecode($_SERVER['REQUEST_URI'])));
     <?php endif; ?>
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
     <meta name="generator" content="<?php echo SENAYAN_VERSION ?>">
+    <meta name="designer" content="CV. Mitra Coretech, https://www.mitracoretech.id">
     <meta name="theme-color" content="<?= bk_color('bk_primary', '#0067B8') ?>">
 
     <meta property="og:locale" content="<?php echo str_replace('-', '_', $sysconf['default_lang']); ?>"/>

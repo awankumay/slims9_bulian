@@ -11,7 +11,7 @@ Riwayat SLiMS upstream ada di `changes.txt`.
 - Buku tamu tema `bulian-kampus` menjadi kiosk pindai kartu: pemindai USB barcode/QR, kamera opsional (QR, Code128, Code39, EAN-13; butuh HTTPS), penolakan pindai ganda, dan form tamu otomatis untuk ID yang tidak terdaftar.
 - Tema kartu anggota baru `bulian-kartu` (CR80) dengan barcode Code128 di depan dan QR buku tamu di belakang, keduanya digambar sebagai SVG.
 - Panduan: `docs/fork/tema-kampus-dan-kartu.md`.
-- Footer OPAC tema `bulian-kampus` mencantumkan pembuat tema: "Tema oleh CV. Mitra Coretech" (tautan ke https://www.mitracoretech.id) di samping "Ditenagai oleh SLiMS".
+- Footer OPAC tema `bulian-kampus` mencantumkan pembuat tema: "Tema oleh CV. Mitra Coretech" (tautan ke https://www.mitracoretech.id) di samping "Ditenagai oleh SLiMS". Tampilannya diatur di Kustomisasi tema ("Kredit pembuat tema"): Tampil, Samar (teks kecil, tautan tetap terlihat), atau Sembunyi (hanya meta tag `designer`).
 
 - Tema `bulian-kampus` disesuaikan dengan mockup UI: kepala halaman lengket (hanya menu yang tetap terlihat saat digulir, bayangan tipis, jangkar tidak tertutup), tombol "Pencarian spesifik" dan tombol cari di kolom pencarian, koleksi terbaru dengan pengarang (dirender server), jam layanan berbentuk tabel, kartu hasil pencarian dan saringan baru, detail bibliografi dengan tabel ketersediaan, dan kartu profil di area anggota (tanggal kembali yang dekat/lewat diberi warna).
 - Buku tamu `bulian-kampus` punya tiga tata letak (`split`, `center`, `camera`) yang dipilih di Kustomisasi tema atau per perangkat dengan `index.php?p=visitor&layout=...`; layout `camera` menyalakan kamera otomatis. Nama ruang (`&room=`) tampil di layar, dan baris status menampilkan ringkasan (mis. "Tercatat · M0001").
