@@ -24,6 +24,8 @@ docker compose logs slims | grep -A3 "ADMIN CREDENTIALS"
 
 Login sebagai `admin` dengan password dari log, lalu **segera ganti password**. Password acak dibuat setiap kali container start dan password `admin` di database masih sama dengan bawaan `install/senayan.sql`, misalnya setelah volume `dbdata` dibuat ulang.
 
+Atau jalankan `./setup.sh`: membuat `.env` (password DB acak, `chmod 600`), menanyakan port dan token Cloudflare Tunnel, build, menunggu container healthy, lalu menampilkan password admin. Jika `.env` sudah ada, file itu tidak diubah.
+
 Data sampel (koleksi contoh) **tidak** dimuat secara default. Untuk demo, set `LOAD_SAMPLE_DATA=true` sebelum start pertama. Skema dan data sampel hanya dimuat saat volume `dbdata` masih kosong.
 
 ## Variabel `.env`
@@ -107,11 +109,35 @@ Uji upgrade ini sudah dijalankan secara lokal: stack lama dengan data → compos
 - Folder `install/` dihapus dari image, sehingga migrasi skema saat upgrade dari versi SLiMS lama (mis. 9.7.x) belum didukung lewat Docker. Ini akan ditangani di batch rilis.
 - Password admin pertama tercetak sekali di log container. Hapus atau rotasi log setelah instalasi jika log dikirim ke sistem lain.
 
+## Operasional harian (`slims.sh`)
+
+| Perintah | Fungsi |
+|---|---|
+| `./slims.sh status` | Status container, kode HTTP, CPU/memori, ukuran volume |
+| `./slims.sh start` / `stop` | Start / stop semua service (data tetap) |
+| `./slims.sh restart [service]` | Restart semua atau satu service (`slims`, `db`, `cloudflared`) |
+| `./slims.sh logs [service]` | Ikuti 200 baris log terakhir |
+| `./slims.sh db` | Konsol MariaDB sebagai akun aplikasi (kredensial diambil dari container DB, `.env` tidak dibaca) |
+| `./slims.sh backup` | Dump DB ke `backups/slims-<waktu>.sql.gz` (folder `700`, file `600`, tidak di-commit) |
+| `./slims.sh shell [service]` | Shell di dalam container (bawaan `slims`) |
+| `./slims.sh update` | Rebuild image dan recreate container, dijalankan setelah `git pull` |
+| `./slims.sh headers [url]` | Tampilkan header keamanan, mis. `./slims.sh headers https://opac.contoh.ac.id/` |
+
+Restore backup: `gunzip -c backups/<file>.sql.gz | docker compose exec -T db sh -c 'MYSQL_PWD="$MARIADB_PASSWORD" mariadb -u"$MARIADB_USER" "$MARIADB_DATABASE"'`. Ini menimpa tabel yang ada.
+
+## Header keamanan
+
+`docker/apache/slims-security.conf` mengirim `X-Content-Type-Options`, `Strict-Transport-Security` (`max-age=31536000; includeSubDomains`), `Referrer-Policy: strict-origin-when-cross-origin`, dan `Permissions-Policy`. `X-Frame-Options` datang dari `.htaccess`, `Content-Security-Policy` dari SLiMS (`config/csp.php`).
+
+- HSTS dikirim juga lewat HTTP biasa. Browser mengabaikannya di HTTP (RFC 6797), jadi akses `http://IP:8881` di LAN tetap jalan. Setelah browser menerima HSTS lewat HTTPS, domain itu (dan subdomainnya) hanya bisa dibuka lewat HTTPS selama 1 tahun.
+- `Permissions-Policy` mengizinkan kamera untuk situs sendiri (foto anggota/pengguna, pemindai kamera buku tamu). Mikrofon, lokasi, pembayaran, USB, dan sensor gerak dimatikan.
+- Jika HSTS juga diaktifkan di Cloudflare (*SSL/TLS → Edge Certificates*), pastikan nilainya sama agar tidak ada dua header berbeda.
+
 ## Pemeriksaan setelah deployment
 
 ```bash
-docker compose ps                      # kedua service "healthy"
-curl -sI http://127.0.0.1:8881/ | grep -i "server\|x-content-type\|x-powered"
+./slims.sh status                      # kedua service "healthy", HTTP 200
+./slims.sh headers                     # header keamanan lengkap
 docker compose exec slims php -v       # 8.3.36 atau 8.4.27
 ```
 

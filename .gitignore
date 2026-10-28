@@ -71,3 +71,6 @@ tarsius
 
 # Release builds (tools/release)
 /dist/
+
+# Database dumps from ./slims.sh backup
+/backups/

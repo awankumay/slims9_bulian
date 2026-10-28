@@ -25,6 +25,10 @@ Riwayat SLiMS upstream ada di `changes.txt`.
 - Nama pengunjung di-escape di pesan respons; respons JSON memuat `code` (`checked_in`, `already_checked_in`, `expired`, `need_institution`, `rate_limited`, `csrf`, `empty`, `error`), dan kiosk `bulian-kampus` memakainya.
 - Hook plugin `MEMBER_ON_VISIT` kini menerima data anggota (sebelumnya `false`).
 
+### Docker
+- Header keamanan baru di image: `Strict-Transport-Security` (1 tahun, `includeSubDomains`), `Referrer-Policy: strict-origin-when-cross-origin`, dan `Permissions-Policy` (kamera hanya untuk situs sendiri; mikrofon, lokasi, pembayaran, USB, sensor gerak dimatikan). Butuh rebuild image.
+- Script operasional `setup.sh` (instalasi pertama: `.env` dengan password DB acak, build, tunggu healthy, tampilkan password admin) dan `slims.sh` (status, start/stop/restart, logs, konsol DB, backup DB, shell, update, cek header).
+
 ## v9.8.0-bulian.1
 
 Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3.36 dan 8.4.27 dengan MariaDB LTS.
