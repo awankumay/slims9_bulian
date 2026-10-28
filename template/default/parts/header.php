@@ -88,7 +88,7 @@ $request_uri = urlencode(strip_tags(urldecode($_SERVER['REQUEST_URI'])));
     $icon = SWB . 'webicon.ico';
     if (isset($sysconf['webicon']) && !empty($sysconf['webicon']) && $imagesDisk->isExists($path = 'default/' . $sysconf['webicon']))
     {
-        $icon = SWB . 'lib/minigalnano/createthumb.php?filename=images/' . $path . '&width=130';
+        $icon = SWB . 'images/' . $path . '?v=' . ($sysconf['static_file_version'] ?? '');
     }
     ?>
     <link rel="shortcut icon" href="<?= $icon ?>" type="image/x-icon"/>

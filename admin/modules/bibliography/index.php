@@ -260,6 +260,9 @@ if (isset($_POST['saveData']) AND $can_read AND $can_write) {
                 // File size check
                 $images->isLimitExceeded($sysconf['max_image_upload']*1024);
 
+                // Is it really image file
+                $images->isImageFile();
+
                 // destroy it if failed
                 if (!empty($images->getError())) $images->destroyIfFailed();
 

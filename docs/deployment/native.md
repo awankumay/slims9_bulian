@@ -8,7 +8,7 @@ server lokal perpustakaan. Sudah diuji di Ubuntu 24.04 dengan Apache 2.4, PHP
 
 | Komponen | Versi | Catatan |
 |---|---|---|
-| PHP | 8.3.x atau 8.4.x | Ekstensi: `intl gd gettext mbstring zip mysqli pdo_mysql curl xml` |
+| PHP | 8.3.x atau 8.4.x | Ekstensi: `intl gd exif fileinfo gettext mbstring zip mysqli pdo_mysql curl xml` |
 | Web server | Apache 2.4 (mod_php/FPM) atau Nginx + PHP-FPM | `mod_rewrite` dan `mod_headers` aktif untuk Apache |
 | Database | MariaDB 10.5+ atau MySQL 8 | |
 | Composer | 2.x | Untuk memasang `vendor/` jika memakai source, bukan paket rilis |

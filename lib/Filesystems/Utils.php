@@ -108,48 +108,15 @@ trait Utils
 
     /**
      * Clean sensitive exif info
+     *
+     * Re-encoding JPEG/PNG with GD drops EXIF/XMP metadata such as the GPS
+     * position and camera serial number.
+     *
      * @return void
      */
     public function cleanExifInfo()
     {
-        if (!empty($this->uploadedFile)) {
-            try {
-                $originName = $this->uploadedFile;
-                $buffer = $this->filesystem->read($this->uploadedFile);
-                $imageIndetification = pathinfo($originName);
-
-                if (!in_array('.' . ($imageIndetification['extension']??'?'), config('allowed_images'))) {
-                    return;
-                }
-
-                $ext = $imageIndetification['extension'];
-
-                //  no gif
-                if (strtolower($ext) == 'gif') return;
-
-                //  jpg is jpeg
-                if ($ext == 'jpg') $ext = 'jpeg';
-
-                // create image from string
-                #$image = imagecreatefromstring($buffer);
-                $image = new \claviska\SimpleImage();
-                $image->fromDataUri($buffer);
-                $image->save();
-
-                if (function_exists(($functionName = 'image' . $ext))) {
-                    $compressLevel = [
-                        'png' => 9,
-                        'jpeg' => 90
-                    ];
-
-                    $functionName($image, $this->path . DS . ($cleanName = 'clean' . $originName), $compressLevel[$ext]);
-                }
-
-                // move clean version to original file
-                $this->filesystem->move($cleanName, $originName);
-            } catch (\Exception $e) {
-                writeLog('system', $e->getCode(), 'failed exif check', $e->getMessage());
-            }
-        }
+        if (empty($this->uploadedFile)) return;
+        $this->sanitizeImageWithGD();
     }
 }
