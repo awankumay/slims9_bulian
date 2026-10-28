@@ -22,7 +22,7 @@ docker compose up -d --build
 docker compose logs slims | grep -A3 "ADMIN CREDENTIALS"
 ```
 
-Login sebagai `admin` dengan password dari log, lalu **segera ganti password**. Password acak ini hanya dibuat sekali (penanda `files/.admin_initialized`).
+Login sebagai `admin` dengan password dari log, lalu **segera ganti password**. Password acak dibuat setiap kali container start dan password `admin` di database masih sama dengan bawaan `install/senayan.sql`, misalnya setelah volume `dbdata` dibuat ulang.
 
 Data sampel (koleksi contoh) **tidak** dimuat secara default. Untuk demo, set `LOAD_SAMPLE_DATA=true` sebelum start pertama. Skema dan data sampel hanya dimuat saat volume `dbdata` masih kosong.
 
@@ -41,12 +41,41 @@ Data sampel (koleksi contoh) **tidak** dimuat secara default. Untuk demo, set `L
 | `PHP_IMAGE` | 8.3.36 | Ganti ke image 8.4.27 untuk menguji PHP 8.4 (lihat `.env.example`) |
 | `MARIADB_IMAGE` | `mariadb:lts` | Pin ke versi mayor tertentu untuk produksi, mis. `mariadb:11.8` |
 | `DB_WAIT_TIMEOUT` | `120` | Detik maksimal menunggu DB sebelum container aplikasi berhenti dengan error |
+| `COMPOSE_PROFILES` | kosong | Isi `tunnel` untuk menjalankan Cloudflare Tunnel |
+| `CLOUDFLARE_TUNNEL_TOKEN` | kosong | Token tunnel dari dashboard Cloudflare. Hanya dipakai profile `tunnel` |
+| `CLOUDFLARED_IMAGE` | `cloudflare/cloudflared:latest` | Pin ke versi tertentu untuk produksi |
+| `TUNNEL_SUBNET` | `172.31.250.0/29` | Subnet network `tunnel`. Ganti jika bentrok dengan jaringan lain |
+| `TUNNEL_PROXY_IP` | `172.31.250.6` | IP tetap `cloudflared` di dalam `TUNNEL_SUBNET`, satu-satunya sumber yang dipercaya untuk header `CF-Connecting-IP` |
 
 `.env` tidak ikut masuk image (`.dockerignore`) dan tidak di-commit (`.gitignore`).
 
 ## HTTPS
 
 Container hanya melayani HTTP di port 80. Untuk produksi, pasang reverse proxy (Nginx, Caddy, atau Traefik) yang menangani sertifikat, lalu set `HTTP_BIND=127.0.0.1` agar port aplikasi tidak terbuka langsung.
+
+### Cloudflare Tunnel (opsional)
+
+Service `cloudflared` ada di profile `tunnel` dan tidak jalan tanpa `--profile tunnel`. HTTPS ditangani Cloudflare, server tidak perlu membuka port ke internet.
+
+1. Di dashboard Cloudflare (*Zero Trust → Networks → Tunnels*), buat tunnel tipe *Cloudflared*, salin token-nya.
+2. Tambahkan *Public Hostname*, mis. `opac.contoh.ac.id`, dengan service `HTTP` dan URL `slims:80`.
+3. Isi `.env`:
+   ```
+   COMPOSE_PROFILES=tunnel
+   CLOUDFLARE_TUNNEL_TOKEN=<token>
+   HTTP_BIND=127.0.0.1
+   ```
+4. Jalankan seperti biasa:
+   ```bash
+   docker compose up -d --build
+   docker compose logs cloudflared | grep -i "registered tunnel connection"
+   ```
+
+`COMPOSE_PROFILES=tunnel` adalah sakelar on/off-nya: selama terisi, semua perintah `docker compose` (`up`, `logs`, `down`) ikut menyertakan `cloudflared` tanpa `--profile`. Untuk mematikan tunnel, hentikan dulu containernya dengan `docker compose rm -sf cloudflared`, lalu kosongkan `COMPOSE_PROFILES`. Mengosongkan nilainya saja tidak menghentikan `cloudflared` yang sudah berjalan, termasuk dengan `up -d --remove-orphans`. Jika log berisi `"cloudflared tunnel run" requires the ID or name of the tunnel`, berarti `CLOUDFLARE_TUNNEL_TOKEN` kosong.
+
+IP pengunjung: Apache (`mod_remoteip`) mengambil IP asli dari header `CF-Connecting-IP`, tetapi hanya jika request datang dari `TUNNEL_PROXY_IP`. Header yang sama dari sumber lain, termasuk lewat port `HTTP_PORT`, diabaikan. Tanpa ini semua pengunjung tercatat dengan IP `cloudflared`, dan rate limit visitor counter berlaku untuk semua orang sekaligus.
+
+Jika sesi login harus hanya lewat HTTPS, tambahkan `session.cookie_secure = 1` di `docker/php/zz-slims.ini`. Akses langsung lewat `http://127.0.0.1:8881` setelah itu tidak bisa login.
 
 ## Upgrade dari docker-compose lama (v9.8.0 asli)
 

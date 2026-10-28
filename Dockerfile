@@ -18,7 +18,7 @@ RUN apt-get update \
     && docker-php-ext-enable gd
 RUN rm -rf /var/lib/apt/lists/*
 
-RUN a2enmod rewrite headers
+RUN a2enmod rewrite headers remoteip
 
 COPY docker/php/zz-slims.ini /usr/local/etc/php/conf.d/zz-slims.ini
 COPY docker/apache/slims-security.conf /etc/apache2/conf-available/slims-security.conf

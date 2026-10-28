@@ -59,6 +59,22 @@ for name in csp auth; do
     fi
 done
 
+# Behind Cloudflare Tunnel every request comes from cloudflared. Take the client
+# IP from CF-Connecting-IP, but only from the trusted proxy address, so the
+# header cannot be spoofed through the published HTTP port.
+REMOTEIP_CONF=/etc/apache2/conf-enabled/zz-remoteip.conf
+case "${TRUSTED_PROXY}" in
+    "") rm -f "$REMOTEIP_CONF" ;;
+    *[!0-9A-Fa-f.:/\ ]*)
+        echo "ERROR: TRUSTED_PROXY must be IP addresses or CIDR ranges, got: ${TRUSTED_PROXY}" >&2
+        exit 1
+        ;;
+    *)
+        printf 'RemoteIPHeader CF-Connecting-IP\nRemoteIPInternalProxy %s\n' "$TRUSTED_PROXY" > "$REMOTEIP_CONF"
+        echo "Client IP taken from CF-Connecting-IP when sent by: ${TRUSTED_PROXY}"
+        ;;
+esac
+
 # Wait for the database, but not forever.
 DB_WAIT_TIMEOUT="${DB_WAIT_TIMEOUT:-120}"
 echo "Waiting for database (timeout ${DB_WAIT_TIMEOUT}s)..."
@@ -77,37 +93,29 @@ exit(\$conn->connect_error ? 1 : 0);
 done
 echo "Database is ready."
 
-# Randomize admin password on first startup only
-INIT_FLAG="$APP_DIR/files/.admin_initialized"
-if [ ! -f "$INIT_FLAG" ]; then
-    ADMIN_PASS=$(openssl rand -base64 12 | tr -dc 'A-Za-z0-9' | head -c 16)
-    export ADMIN_PASS
-    ADMIN_HASH=$(php -r "echo password_hash(getenv('ADMIN_PASS'), PASSWORD_BCRYPT);")
-    export ADMIN_HASH
-
-    php -r "
+# Randomize the admin password while it still has the public default hash from
+# install/senayan.sql. Checked against the database (not a flag file in the files
+# volume) so a fresh database volume is always rotated.
+ADMIN_PASS=$(openssl rand -base64 12 | tr -dc 'A-Za-z0-9' | head -c 16)
+export ADMIN_PASS
+rc=0
+php -r "
 \$conn = new mysqli(getenv('DB_HOST'), getenv('DB_USER'), getenv('DB_PASS'), getenv('DB_NAME'), (int)(getenv('DB_PORT') ?: 3306));
-if (\$conn->connect_error) {
-    echo 'DB connection failed: ' . \$conn->connect_error . PHP_EOL;
-    exit(1);
-}
-\$stmt = \$conn->prepare('UPDATE user SET passwd=? WHERE username=?');
-\$hash = getenv('ADMIN_HASH');
+\$default = '\$2y\$10\$pG0dqMrd2r39zRTSFSyp8.Z7sMy4cY7s/18UDQsV50Vn0TnR6UORm';
+\$stmt = \$conn->prepare('UPDATE user SET passwd=? WHERE username=? AND passwd=?');
+\$hash = password_hash(getenv('ADMIN_PASS'), PASSWORD_BCRYPT);
 \$user = 'admin';
-\$stmt->bind_param('ss', \$hash, \$user);
+\$stmt->bind_param('sss', \$hash, \$user, \$default);
 \$stmt->execute();
-if (\$stmt->affected_rows > 0) {
-    echo 'Admin password updated successfully.' . PHP_EOL;
-} else {
-    echo 'Warning: admin user not found or password unchanged.' . PHP_EOL;
-}
-\$stmt->close();
-\$conn->close();
-"
+exit(\$stmt->affected_rows > 0 ? 0 : 3);
+" || rc=$?
 
-    touch "$INIT_FLAG"
-    unset ADMIN_HASH
+if [ "$rc" -ne 0 ] && [ "$rc" -ne 3 ]; then
+    echo "ERROR: admin password check failed (exit $rc). Is the SLiMS schema loaded in $DB_NAME?" >&2
+    exit 1
+fi
 
+if [ "$rc" -eq 0 ]; then
     echo ""
     echo "========================================================"
     echo "  SLIMS FIRST-TIME SETUP - ADMIN CREDENTIALS"
@@ -116,11 +124,10 @@ if (\$stmt->affected_rows > 0) {
     echo "  Please change your password immediately after login!"
     echo "========================================================"
     echo ""
-
-    unset ADMIN_PASS
 else
     echo "Admin password already initialized, skipping."
 fi
+unset ADMIN_PASS
 
 # Start the PHP application
 exec "$@"
