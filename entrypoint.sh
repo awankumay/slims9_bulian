@@ -59,6 +59,22 @@ for name in csp auth; do
     fi
 done
 
+# Behind Cloudflare Tunnel every request comes from cloudflared. Take the client
+# IP from CF-Connecting-IP, but only from the trusted proxy address, so the
+# header cannot be spoofed through the published HTTP port.
+REMOTEIP_CONF=/etc/apache2/conf-enabled/zz-remoteip.conf
+case "${TRUSTED_PROXY}" in
+    "") rm -f "$REMOTEIP_CONF" ;;
+    *[!0-9A-Fa-f.:/\ ]*)
+        echo "ERROR: TRUSTED_PROXY must be IP addresses or CIDR ranges, got: ${TRUSTED_PROXY}" >&2
+        exit 1
+        ;;
+    *)
+        printf 'RemoteIPHeader CF-Connecting-IP\nRemoteIPInternalProxy %s\n' "$TRUSTED_PROXY" > "$REMOTEIP_CONF"
+        echo "Client IP taken from CF-Connecting-IP when sent by: ${TRUSTED_PROXY}"
+        ;;
+esac
+
 # Wait for the database, but not forever.
 DB_WAIT_TIMEOUT="${DB_WAIT_TIMEOUT:-120}"
 echo "Waiting for database (timeout ${DB_WAIT_TIMEOUT}s)..."

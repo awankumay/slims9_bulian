@@ -17,6 +17,10 @@ services:
       DB_USER: ${DB_USER:-slims}
       DB_PASS: ${DB_PASS:?Set DB_PASS in .env}
       DB_NAME: ${DB_NAME:-senayan}
+      DB_WAIT_TIMEOUT: ${DB_WAIT_TIMEOUT:-120}
+      # Apache takes the client IP from CF-Connecting-IP only when the request
+      # comes from this address (the cloudflared container).
+      TRUSTED_PROXY: ${TUNNEL_PROXY_IP:-172.31.250.6}
     volumes:
       - appfiles:/var/www/html/files
       - appimages:/var/www/html/images
@@ -25,6 +29,7 @@ services:
       - "${HTTP_BIND:-0.0.0.0}:${HTTP_PORT:-8881}:80"
     networks:
       - slims
+      - tunnel
     depends_on:
       db:
         condition: service_healthy
@@ -52,9 +57,29 @@ services:
     networks:
       - slims
 
+  # Optional: enable with COMPOSE_PROFILES=tunnel in .env
+  # Set the tunnel's public hostname service to http://slims:80 in Cloudflare.
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    networks:
+      tunnel:
+        ipv4_address: ${TUNNEL_PROXY_IP:-172.31.250.6}
+    depends_on:
+      - slims
+
 networks:
   slims:
     driver: bridge
+  tunnel:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${TUNNEL_SUBNET:-172.31.250.0/29}
 
 volumes:
   dbdata:
