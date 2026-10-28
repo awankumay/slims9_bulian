@@ -181,9 +181,11 @@ sama. Kartu CR80 tegak (5,4 × 8,6 cm) untuk lanyard.
 
 - Depan: penanda lubang lanyard, judul kartu, nama perpustakaan dan perguruan
   tinggi, foto 3×4, nama (maks. 2 baris), nomor anggota, jenis anggota dan
-  masa berlaku, instansi/prodi, barcode Code128 dan QR (bisa disembunyikan).
-  Nomor anggota yang terlalu panjang untuk barcode di samping QR (garis di
-  bawah 0,2 mm) otomatis memakai barcode selebar kartu dengan QR di bawahnya.
+  masa berlaku, instansi/prodi, lalu satu kode: QR **atau** barcode Code128.
+- **Pakai QR** di Customize: "Ya" = hanya QR, "Tidak" = hanya barcode.
+  Keduanya berisi nomor anggota yang sama, jadi cukup satu. Pilih "Tidak"
+  bila pemindai sirkulasi hanya membaca barcode 1D; kiosk buku tamu membaca
+  keduanya.
 - Belakang: ketentuan anggota, kota/tanggal, jabatan, tanda tangan dan
   stempel (`signature.png`/`stamp.png` di folder `images/` tema ini), nama dan
   NIP pejabat, alamat.

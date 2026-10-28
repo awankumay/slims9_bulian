@@ -21,7 +21,8 @@ require_once __DIR__ . '/../bulian-kartu/card-lib.inc.php';
 $bk_primary = bk_card_color($bk_conf['primary_color'] ?? '', '#0067B8');
 $bk_accent = bk_card_color($bk_conf['accent_color'] ?? '', '#F9DA00');
 [$bk_w, $bk_h] = bk_card_size($bk_conf, true);
-$bk_show_qr = (int)($bk_conf['show_qr'] ?? 1) === 1;
+// QR dan barcode berisi nomor anggota yang sama; kartu memuat salah satu saja
+$bk_use_qr = (int)($bk_conf['use_qr'] ?? 1) === 1;
 $bk_duplex = ($bk_conf['sheet_layout'] ?? 'pair') === 'duplex';
 $bk_font_path = $card_path . '../bulian-kartu/fonts/';
 
@@ -48,15 +49,11 @@ foreach (array_merge(...array_values($chunked_card_arrays ?: [[]])) as $card) {
   if (!empty($card['member_image']) && is_file(IMGBS . 'persons' . DS . basename($card['member_image']))) {
     $photo = SWB . IMG . '/persons/' . rawurlencode(basename($card['member_image']));
   }
-  $barcode = bk_card_barcode($member_id);
-  // barcode di samping QR selebar ~29 mm; nomor panjang (garis < 0,2 mm) dapat baris sendiri
-  $modules = $barcode && preg_match('/viewBox="0 0 ([\d.]+)/', $barcode, $m) ? (float)$m[1] : 0;
   $bk_cards[] = $card + [
     'id' => $member_id,
     'photo' => $photo,
-    'barcode' => $barcode,
-    'qr' => $bk_show_qr ? bk_card_qr($member_id) : null,
-    'wide' => $bk_show_qr && $modules > 145,
+    'qr' => $bk_use_qr ? bk_card_qr($member_id) : null,
+    'barcode' => $bk_use_qr ? null : bk_card_barcode($member_id),
   ];
 }
 
@@ -102,13 +99,14 @@ $bk_front = function ($card) use ($bk_conf) {
         <p class="inst"><?= bk_card_text($card['inst_name']) ?></p>
         <?php endif; ?>
       </div>
-      <div class="codes<?= $card['wide'] ? ' wide' : '' ?><?= $card['qr'] ? '' : ' no-qr' ?>">
-        <div class="barcode">
-          <?php if ($card['barcode']) : echo $card['barcode']; else : ?>
-          <img src="<?= SWB . IMG . '/barcodes/' . rawurlencode(str_replace(' ', '_', $card['id'])) ?>.png" alt="Barcode <?= bk_card_text($card['id']) ?>">
-          <?php endif; ?>
-        </div>
-        <?php if ($card['qr']) : ?><div class="qr"><?= $card['qr'] ?></div><?php endif; ?>
+      <div class="codes">
+        <?php if ($card['qr']) : ?>
+        <div class="qr"><?= $card['qr'] ?></div>
+        <?php elseif ($card['barcode']) : ?>
+        <div class="barcode"><?= $card['barcode'] ?></div>
+        <?php else : ?>
+        <div class="barcode"><img src="<?= SWB . IMG . '/barcodes/' . rawurlencode(str_replace(' ', '_', $card['id'])) ?>.png" alt="Barcode <?= bk_card_text($card['id']) ?>"></div>
+        <?php endif; ?>
       </div>
       <div class="stripe"></div>
     </section>
@@ -190,16 +188,10 @@ p { margin: 0; }
 .who .id { font-family: 'DejaVu Sans Mono', 'Consolas', 'Courier New', monospace; font-size: 3mm; font-weight: 700; letter-spacing: 0.04em; }
 .who .meta { font-size: 1.95mm; color: #4B5A57; }
 .who .inst { font-size: 1.7mm; color: #4B5A57; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.codes { margin-top: auto; width: 100%; padding: 0 3.5mm 3mm; display: flex; align-items: center; justify-content: space-between; gap: 1.8mm; }
-.codes .barcode { flex: 1; min-width: 0; height: 11mm; }
-.codes .barcode svg, .codes .barcode img { width: 100%; height: 100%; display: block; }
-.codes .qr { flex: 0 0 14.5mm; height: 14.5mm; }
-.codes .qr svg { width: 100%; height: 100%; display: block; }
-/* nomor anggota panjang: barcode selebar kartu, QR di bawahnya */
-.codes.wide { flex-direction: column; gap: 1.2mm; }
-.codes.wide .barcode { flex: 0 0 8mm; width: 100%; }
-.codes.wide .qr { flex: 0 0 10.5mm; width: 10.5mm; height: 10.5mm; }
-.codes.no-qr .barcode { height: 12mm; }
+.codes { margin-top: auto; width: 100%; padding: 0 3.5mm 3mm; display: flex; justify-content: center; }
+.codes .qr { width: 17mm; height: 17mm; }
+.codes .barcode { width: 100%; height: 12mm; }
+.codes svg, .codes img { width: 100%; height: 100%; display: block; }
 
 /* sisi belakang */
 .back .head { padding-bottom: 2.6mm; }

@@ -90,12 +90,13 @@ $sysconf['print'][$theme_key] = [
     'default' => $bk_h,
     'width' => '20'
   ],
-  'show_qr' => [
-    'dbfield' => 'data[show_qr]',
-    'label' => 'QR buku tamu di sisi depan',
+  // QR dan barcode berisi nilai yang sama (nomor anggota), jadi kartu cukup memuat salah satu
+  'use_qr' => [
+    'dbfield' => 'data[use_qr]',
+    'label' => 'Pakai QR',
     'type' => 'dropdown',
-    'default' => $bk['show_qr'] ?? 1,
-    'data' => [[1, 'Tampilkan'], [0, 'Sembunyikan']]
+    'default' => $bk['use_qr'] ?? 1,
+    'data' => [[1, 'Ya, hanya QR'], [0, 'Tidak, hanya barcode (Code128)']]
   ],
   'rules' => [
     'dbfield' => 'data[rules]',
