@@ -27,6 +27,42 @@ cmd_status() {
     docker system df -v 2>/dev/null | grep -E "VOLUME NAME|_(dbdata|appfiles|appimages|apprepo) " || true
 }
 
+# Colour Apache access lines by HTTP status (2xx green, 3xx cyan, 4xx yellow,
+# 5xx red) and error/warning lines from PHP, Apache, MariaDB and cloudflared.
+# Only when stdout is a terminal and NO_COLOR is unset.
+colorize_logs() {
+    awk '
+    BEGIN {
+        E = sprintf("%c", 27); R = E "[0m"
+        GREEN = E "[32m"; CYAN = E "[36m"; YELLOW = E "[33m"; RED = E "[31m"; BRED = E "[1;31m"
+    }
+    {
+        line = $0
+        if (match(line, /" [1-5][0-9][0-9] /)) {
+            code = substr(line, RSTART + 2, 3); c = substr(code, 1, 1)
+            pre = substr(line, 1, RSTART + 1); post = substr(line, RSTART + 5)
+            if (c == "5")      line = RED pre BRED code R RED post R
+            else if (c == "4") line = YELLOW pre code post R
+            else if (c == "3") line = pre CYAN code R post
+            else if (c == "2") line = pre GREEN code R post
+        } else if (line ~ /(PHP (Fatal|Parse) error|:error\]|:crit\]|:alert\]|:emerg\]|\[ERROR\]| ERR |Uncaught|Exception)/) {
+            line = RED line R
+        } else if (line ~ /(:warn\]|\[Warning\]| WRN |PHP (Warning|Notice|Deprecated))/) {
+            line = YELLOW line R
+        }
+        print line
+        fflush()
+    }'
+}
+
+cmd_logs() {
+    if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+        dc logs -f --tail=200 "$@" 2>&1 | colorize_logs
+    else
+        dc logs -f --tail=200 "$@"
+    fi
+}
+
 cmd_headers() {
     local url="${1:-$(http_url)}"
     echo "Security headers from $url"
@@ -64,7 +100,8 @@ Usage: ./slims.sh <command> [args]
   start               Start all services
   stop                Stop all services (data is kept)
   restart [service]   Restart all services or one (slims, db, cloudflared)
-  logs [service]      Follow the last 200 log lines (Ctrl+C to quit)
+  logs [service]      Follow the last 200 log lines, coloured by HTTP status
+                      (Ctrl+C to quit; NO_COLOR=1 or a pipe turns colour off)
   db                  MariaDB console as the application user
   backup              Dump the database to backups/slims-<timestamp>.sql.gz
   shell [service]     Shell inside a container (default: slims)
@@ -78,7 +115,7 @@ case "${1:-help}" in
     start)   dc up -d ;;
     stop)    dc stop ;;
     restart) shift; dc restart "$@" ;;
-    logs)    shift; dc logs -f --tail=200 "$@" ;;
+    logs)    shift; cmd_logs "$@" ;;
     db)      cmd_db ;;
     backup)  cmd_backup ;;
     shell)   dc exec "${2:-slims}" bash ;;
