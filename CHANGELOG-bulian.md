@@ -10,6 +10,7 @@ Riwayat SLiMS upstream ada di `changes.txt`.
 - Aksesibilitas tema `bulian-kampus`: ukuran teks, mode kontras tinggi, tautan "Langsung ke konten", fokus keyboard terlihat, dan font lokal (Lato, Saira).
 - Buku tamu tema `bulian-kampus` menjadi kiosk pindai kartu: pemindai USB barcode/QR, kamera opsional (QR, Code128, Code39, EAN-13; butuh HTTPS), penolakan pindai ganda, dan form tamu otomatis untuk ID yang tidak terdaftar.
 - Tema kartu anggota baru `bulian-kartu` (CR80) dengan barcode Code128 di depan dan QR buku tamu di belakang, keduanya digambar sebagai SVG.
+- Tema kartu anggota tegak `bulian-kartu-potret` (CR80 5,4 × 8,6 cm, untuk lanyard) sesuai mockup: foto di tengah, barcode Code128 dan QR di depan, ketentuan dan tanda tangan di belakang. Lembar A4 bisa berdampingan (3 anggota per halaman) atau bolak-balik (9 kartu, sisi belakang dicerminkan). Ukuran kartu yang tersimpan dari tema lanskap dibalik otomatis.
 - Panduan: `docs/fork/tema-kampus-dan-kartu.md`.
 - Footer OPAC tema `bulian-kampus` mencantumkan pembuat tema: "Tema oleh CV. Mitra Coretech" (tautan ke https://www.mitracoretech.id) di samping "Ditenagai oleh SLiMS". Tampilannya diatur di Kustomisasi tema ("Kredit pembuat tema"): Tampil, Samar (teks kecil, tautan tetap terlihat), atau Sembunyi (hanya meta tag `designer`).
 
