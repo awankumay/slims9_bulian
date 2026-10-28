@@ -44,6 +44,14 @@ function bk_assets($path = '')
   return CURRENT_TEMPLATE_DIR . 'assets/' . $path;
 }
 
+// theme asset URL with a version from the file's change time, so browsers fetch
+// the new CSS/JS right after a deploy (v() only changes with the SLiMS version)
+function bk_assets_v($path)
+{
+  $mtime = @filemtime(__DIR__ . '/assets/' . $path);
+  return bk_assets($path) . '?v=' . ($mtime ? base_convert((string)$mtime, 10, 36) : substr(md5(SENAYAN_VERSION_TAG), 0, 5));
+}
+
 // read a theme option and make it safe to print as text
 function bk_opt($key, $default = '')
 {

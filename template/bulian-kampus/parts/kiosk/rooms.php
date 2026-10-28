@@ -91,4 +91,4 @@ window.BK_ROOMS = <?= json_encode([
     'rooms' => array_column($bk_rooms, 'unique_code'),
 ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
-<script src="<?= bk_assets(v('js/kiosk-rooms.js')) ?>"></script>
+<script src="<?= bk_assets_v('js/kiosk-rooms.js') ?>"></script>
