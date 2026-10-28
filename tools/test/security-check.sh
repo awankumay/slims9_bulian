@@ -21,5 +21,11 @@ check "bulian-kampus prints no raw theme option" \
   "! grep -rq 'bk_html(' template/bulian-kampus"
 check "member card template name is a single directory" \
   "grep -q \"basename(utility::filterData('template'\" admin/modules/system/membercard_theme.php"
+check "AJAX lookups do not allow the member table" \
+  "! grep -q \"'member'\" admin/default/ajax_lookup_guard.inc.php"
+check "AJAX ID check only accepts fixed table/column pairs" \
+  "grep -q \"'member' => 'member_id'\" admin/AJAX_check_id.php"
+check "vocabulary lookup casts topic_id to int" \
+  "grep -q 'topic_id=. \. (int)\$row\[0\]' admin/AJAX_vocabolary_control.php"
 
 exit $fail
