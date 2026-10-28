@@ -41,7 +41,7 @@
     </div>
     <div class="bk-wrap bk-footer__bottom">
         <span>&copy; <?= date('Y') ?> <?= $sysconf['library_name'] ?> · <?= bk_opt('bk_parent_name') ?></span>
-        <span><?= __('Powered by ') ?><a href="https://slims.web.id" target="_blank" rel="noopener">SLiMS</a></span>
+        <span><?= __('Powered by ') ?><a href="https://slims.web.id" target="_blank" rel="noopener">SLiMS</a> · <?= bk_t('Tema oleh', 'Theme by') ?> <a href="https://www.mitracoretech.id" target="_blank" rel="noopener">CV. Mitra Coretech</a></span>
     </div>
 </footer>
 
