@@ -44,42 +44,58 @@ ob_start();
 if (isset($_POST['counter'])) {
 
   if (!\Volnix\CSRF\CSRF::validate($_POST)) {
-    die(Json::stringify(['status' => 'error','message' => __('Invalid CSRF Token! Please refresh the page.'),'image' => 'person.png','new_token' => \Volnix\CSRF\CSRF::getToken()])->withHeader());
+    die(Json::stringify(['status' => 'error','code' => 'csrf','message' => __('Invalid CSRF Token! Please refresh the page.'),'image' => 'person.png','new_token' => \Volnix\CSRF\CSRF::getToken()])->withHeader());
   }
 
-  if (trim($_POST['memberID']) == '') {
-    die(Json::stringify(['message' => __('Member ID can\'t be empty'), 'image' => 'person.png','new_token' => \Volnix\CSRF\CSRF::getToken()])->withHeader());
+  if (!$visitor->withinRateLimit((int)($sysconf['visitor_rate_limit'] ?? 60))) {
+    http_response_code(429);
+    die(Json::stringify(['status' => 'error','code' => 'rate_limited','message' => __('Too many requests, please wait a moment.'),'image' => 'person.png','new_token' => \Volnix\CSRF\CSRF::getToken()])->withHeader());
+  }
+
+  $memberIdInput = Visitor::cleanText($_POST['memberID'] ?? '', 100);
+  if ($memberIdInput === '') {
+    die(Json::stringify(['code' => 'empty','message' => __('Member ID can\'t be empty'), 'image' => 'person.png','new_token' => \Volnix\CSRF\CSRF::getToken()])->withHeader());
   }
    
   // sleep for a while
   sleep(0);
 
   // Record visitor data
-  $visitor->record(trim($_POST['memberID']));
+  $visitor->record($memberIdInput);
 
   $image = 'person.png'; // default image
   if ($visitor->getResult() === true) {
     // Map visitor data into variable list
     list($memberId, $memberName, $institution, $image) = $visitor->getData();
+    $memberName = htmlspecialchars((string)$memberName, ENT_NOQUOTES, 'UTF-8');
+    $code = 'checked_in';
 
     // default message
     $message = $memberName . __(', thank you for inserting your data to our visitor log');
 
     // Expire message
-    if ($visitor->isMemberExpire()) $message = '<div class="error visitor-error">'.__('Your membership already EXPIRED, please renew/extend your membership immediately').'</div>';
+    if ($visitor->isMemberExpire()) {
+      $message = '<div class="error visitor-error">'.__('Your membership already EXPIRED, please renew/extend your membership immediately').'</div>';
+      $code = 'expired';
+    }
 
     // already checkin message
-    if ($visitor->isAlreadyCheckIn()) $message = __('Welcome back').' '.$memberName.'.';
+    if ($visitor->isAlreadyCheckIn()) {
+      $message = __('Welcome back').' '.$memberName.'.';
+      $code = 'already_checked_in';
+    }
 
   // For guest access institution data is required!
   } else if ($visitor->isInstitutionEmpty()) {
     $message = __('Sorry, Please fill institution field if you are not library member');
+    $code = 'need_institution';
   } else {
     $message = ENVIRONMENT === 'production' ? __('Error inserting counter data to database!') : $visitor->getError();
+    $code = 'error';
   }
   
   // send response
-  die(Json::stringify(['message' => $message, 'image' => $image,'new_token' => \Volnix\CSRF\CSRF::getToken(), 'status' => $visitor->getError()])->withHeader());
+  die(Json::stringify(['message' => $message, 'code' => $code, 'image' => $image,'new_token' => \Volnix\CSRF\CSRF::getToken(), 'status' => $visitor->getError()])->withHeader());
 }
 
 // include visitor form template

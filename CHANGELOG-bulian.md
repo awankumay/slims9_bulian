@@ -12,6 +12,14 @@ Riwayat SLiMS upstream ada di `changes.txt`.
 - Tema kartu anggota baru `bulian-kartu` (CR80) dengan barcode Code128 di depan dan QR buku tamu di belakang, keduanya digambar sebagai SVG.
 - Panduan: `docs/fork/tema-kampus-dan-kartu.md`.
 
+### Keamanan buku tamu (`lib/Visitor.php`)
+- Pembatasan IP kiosk tidak lagi bisa dilewati dengan header `Host: localhost`, dan pencocokan IP kini persis. Format aturan: IP persis, wildcard `192.168.1.*`, awalan `192.168.1.`, atau CIDR `192.168.1.0/24`. **Perubahan perilaku:** aturan lama seperti `192.168.1` (tanpa titik/bintang di akhir) tidak lagi cocok sebagai awalan; ubah menjadi `192.168.1.*`.
+- Pembatas laju POST buku tamu per IP (`$sysconf['visitor_rate_limit']`, bawaan 60 per menit, 0 = mati). Melebihi batas → HTTP 429.
+- Input buku tamu divalidasi: nilai non-teks dan `institution` yang hilang tidak lagi memicu HTTP 500, nama/instansi dibatasi 100 karakter, karakter kontrol dibuang, dan tidak lagi tersimpan dengan garis miring terbalik (`O\'Neil`).
+- Kode ruang (`?room=`) harus terdaftar di master ruang pengunjung.
+- Nama pengunjung di-escape di pesan respons; respons JSON memuat `code` (`checked_in`, `already_checked_in`, `expired`, `need_institution`, `rate_limited`, `csrf`, `empty`, `error`), dan kiosk `bulian-kampus` memakainya.
+- Hook plugin `MEMBER_ON_VISIT` kini menerima data anggota (sebelumnya `false`).
+
 ## v9.8.0-bulian.1
 
 Basis: SLiMS v9.8.0 (`slims/slims9_bulian` master `1d89259`). Diuji pada PHP 8.3.36 dan 8.4.27 dengan MariaDB LTS.

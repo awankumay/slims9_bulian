@@ -637,6 +637,7 @@ $sysconf['enable_counter_by_ip'] = true;
 $sysconf['allowed_counter_ip'] = ['127.0.0.1'];
 $sysconf['enable_visitor_limitation']     = false; // "true" or "false"
 $sysconf['time_visitor_limitation']       = 60; // in minute
+$sysconf['visitor_rate_limit']            = 60; // max visitor counter POST per minute per ip, 0 = no limit
 
 /* maximum insert batch */
 $sysconf['max_insert_batch'] = 100;
