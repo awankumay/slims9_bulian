@@ -12,6 +12,11 @@ Riwayat SLiMS upstream ada di `changes.txt`.
 - Tema kartu anggota baru `bulian-kartu` (CR80) dengan barcode Code128 di depan dan QR buku tamu di belakang, keduanya digambar sebagai SVG.
 - Panduan: `docs/fork/tema-kampus-dan-kartu.md`.
 
+### Perbaikan
+- Tema `bulian-kampus`: tombol pilihan pencarian di beranda (Pengarang, Subjek, ISBN/ISSN, Pencarian Spesifik) tidak lagi berteks putih di atas putih.
+- Tambah/ubah anggota: pesan jelas untuk nomor anggota ganda, isian terlalu panjang, dan tanggal tidak valid (sebelumnya hanya "Database insert error."). Tanggal kedaluwarsa kosong saat "Auto Set" tidak dicentang kini dihitung dari periode jenis keanggotaan. Kolom form diberi batas panjang.
+- Setelan cetak kartu anggota dari data contoh `install/` (panjang string serialisasi salah) tidak lagi membuat halaman tema kartu HTTP 500; data contohnya juga diperbaiki.
+
 ### Keamanan buku tamu (`lib/Visitor.php`)
 - Pembatasan IP kiosk tidak lagi bisa dilewati dengan header `Host: localhost`, dan pencocokan IP kini persis. Format aturan: IP persis, wildcard `192.168.1.*`, awalan `192.168.1.`, atau CIDR `192.168.1.0/24`. **Perubahan perilaku:** aturan lama seperti `192.168.1` (tanpa titik/bintang di akhir) tidak lagi cocok sebagai awalan; ubah menjadi `192.168.1.*`.
 - Pembatas laju POST buku tamu per IP (`$sysconf['visitor_rate_limit']`, bawaan 60 per menit, 0 = mati). Melebihi batas → HTTP 429.

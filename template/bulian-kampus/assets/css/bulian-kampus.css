@@ -126,6 +126,19 @@ body.bk-body {
 .bk-body .search .container { max-width: 1240px; }
 .bk-body .search .col-lg-8 { flex: 0 0 100%; max-width: 100%; }
 .bk-body .advanced-wraper { top: 60px; border: 1px solid var(--bk-line); border-radius: var(--bk-radius); }
+/* Bootstrap gives a.btn without href "color: inherit", which turns white
+   inside the dark hero; set the search-option buttons explicitly */
+.bk-body .advanced-wraper { background: #FFFFFF; color: var(--bk-ink); text-align: left; }
+.bk-body .advanced-wraper a.btn { cursor: pointer; }
+.bk-body .advanced-wraper a.btn-outline-secondary:not([href]) { color: #3F4B5C; border-color: #8593A6; background: #FFFFFF; }
+.bk-body .advanced-wraper a.btn-outline-primary:not([href]) { color: var(--bk-primary); border-color: var(--bk-primary); background: #FFFFFF; }
+.bk-body .advanced-wraper a.btn-outline-secondary:not([href]):hover,
+.bk-body .advanced-wraper a.btn-outline-secondary:not([href]):focus { color: #FFFFFF; background: #3F4B5C; border-color: #3F4B5C; }
+.bk-body .advanced-wraper a.btn-outline-primary:not([href]):hover,
+.bk-body .advanced-wraper a.btn-outline-primary:not([href]):focus { color: #FFFFFF; background: var(--bk-primary); }
+.bk-body .advanced-wraper a.btn-primary:not([href]) { color: #FFFFFF; }
+.bk-body .advanced-wraper .btn-light:disabled { color: #4A5568; opacity: 1; }
+.bk-body .advanced-wraper .label { color: var(--bk-ink); }
 
 .bk-hero { background: var(--bk-navy); color: #FFFFFF; padding: 48px 0 56px; }
 .bk-hero__eyebrow { margin: 0 0 6px; color: var(--bk-accent); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.8125rem; }

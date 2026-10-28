@@ -198,6 +198,44 @@ if (isset($_POST['saveData']) && $can_read && $can_write) {
         $data['input_date'] = date('Y-m-d');
         $data['last_update'] = date('Y-m-d');
 
+        // Validate before saving. With MySQL/MariaDB strict mode a bad value only
+        // ends as "Database insert error." in production, so say what is wrong.
+        if ($data['register_date'] === '') $data['register_date'] = date('Y-m-d');
+        if (($data['member_since_date'] ?? '') === '') $data['member_since_date'] = isset($_POST['updateRecordID']) ? null : $data['register_date'];
+        if ($data['expire_date'] === '') {
+            // "Auto Set" unchecked and no date: follow the membership type periode
+            $mtype_query = $dbs->query("SELECT member_periode FROM mst_member_type WHERE member_type_id=".$data['member_type_id']);
+            $mtype_data = $mtype_query ? $mtype_query->fetch_row() : null;
+            if ($mtype_data) $data['expire_date'] = simbio_date::getNextDate($mtype_data[0], $data['register_date']);
+        }
+        $member_errors = [];
+        $member_dates = ['birth_date' => __('Birth Date'), 'member_since_date' => __('Member Since'), 'register_date' => __('Register Date'), 'expire_date' => __('Expiry Date')];
+        foreach ($member_dates as $field => $label) {
+            $value = $data[$field] ?? null;
+            if ($value === null) continue;
+            $parsed = DateTime::createFromFormat('!Y-m-d', $value);
+            if (!$parsed || $parsed->format('Y-m-d') !== $value) $member_errors[] = sprintf(__('%s is not a valid date (use YYYY-MM-DD)'), $label);
+        }
+        $member_lengths = [
+            'member_id' => [__('Member ID'), 20], 'member_name' => [__('Member Name'), 100],
+            'inst_name' => [__('Institution'), 100], 'member_address' => [__('Address'), 255],
+            'postal_code' => [__('Postal Code'), 20], 'member_mail_address' => [__('Mail Address'), 255],
+            'member_phone' => [__('Phone Number'), 50], 'member_fax' => [__('Fax Number'), 50],
+            'pin' => [__('Personal ID Number'), 50], 'member_email' => [__('E-mail'), 100],
+        ];
+        foreach ($member_lengths as $field => [$label, $max]) {
+            if (mb_strlen((string)($data[$field] ?? '')) > $max) $member_errors[] = sprintf(__('%s is too long (maximum %d characters)'), $label, $max);
+        }
+        $member_id_changed = !isset($_POST['updateRecordID']) || $data['member_id'] !== $dbs->escape_string(trim($_POST['updateRecordID']));
+        if ($member_id_changed) {
+            $dup_q = $dbs->query("SELECT member_id FROM member WHERE member_id='".$data['member_id']."'");
+            if ($dup_q && $dup_q->num_rows > 0) $member_errors[] = sprintf(__('Member ID %s is already used by another member'), htmlspecialchars($memberID, ENT_QUOTES));
+        }
+        if ($member_errors) {
+            toastr(implode("\n", $member_errors))->error();
+            exit();
+        }
+
         $imageDisk = Storage::images();
         $base64_data = null;
         $file_extension = 'jpg';
@@ -543,13 +581,13 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     // member code
     $str_input  = '<div class="container-fluid">';
     $str_input .= '<div class="row">';
-    $str_input .= simbio_form_element::textField('text', 'memberID', $rec_d['member_id']??'', 'id="memberID" onblur="ajaxCheckID(\''.SWB.'admin/AJAX_check_id.php\', \'member\', \'member_id\', \'msgBox\', \'memberID\')" class="form-control col-4"');
+    $str_input .= simbio_form_element::textField('text', 'memberID', $rec_d['member_id']??'', 'id="memberID" maxlength="20" onblur="ajaxCheckID(\''.SWB.'admin/AJAX_check_id.php\', \'member\', \'member_id\', \'msgBox\', \'memberID\')" class="form-control col-4"');
     $str_input .= '<div id="msgBox" class="col mt-2"></div>';
     $str_input .= '</div>';
     $str_input .= '</div>';
     $form->addAnything(__('Member ID').'*', $str_input);
     // member name
-    $form->addTextField('text', 'memberName', __('Member Name').'*', $rec_d['member_name']??'', 'class="form-control" style="width: 50%;"');
+    $form->addTextField('text', 'memberName', __('Member Name').'*', $rec_d['member_name']??'', 'maxlength="100" class="form-control" style="width: 50%;"');
     // member birth date
     $form->addDateField('birthDate', __('Birth Date').'*', $rec_d['birth_date']??'','class="form-control"');
     // member since date
@@ -566,7 +604,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
         $form->addAnything(__('Expiry Date').'*', $str_input);
     }
     // member institution
-    $form->addTextField('text', 'instName', __('Institution'), $rec_d['inst_name']??'', 'class="form-control" style="width: 100%;"');
+    $form->addTextField('text', 'instName', __('Institution'), $rec_d['inst_name']??'', 'maxlength="100" class="form-control" style="width: 100%;"');
     // member type
         // get mtype data related to this record from database
         $mtype_query = $dbs->query("SELECT member_type_id, member_type_name FROM mst_member_type");
@@ -582,15 +620,15 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     // member address
     $form->addTextField('textarea', 'memberAddress', __('Address'), $rec_d['member_address']??'', 'rows="2" class="form-control" style="width: 100%;"');
     // member postal
-    $form->addTextField('text', 'memberPostal', __('Postal Code'), $rec_d['postal_code']??'', 'class="form-control" style="width: 50%;"');
+    $form->addTextField('text', 'memberPostal', __('Postal Code'), $rec_d['postal_code']??'', 'maxlength="20" class="form-control" style="width: 50%;"');
     // member mail address
     $form->addTextField('textarea', 'memberMailAddress', __('Mail Address'), $rec_d['member_mail_address']??'', 'rows="2" class="form-control" style="width: 100%;"');
     // member phone
-    $form->addTextField('text', 'memberPhone', __('Phone Number'), $rec_d['member_phone']??'', 'class="form-control" style="width: 50%;"');
+    $form->addTextField('text', 'memberPhone', __('Phone Number'), $rec_d['member_phone']??'', 'maxlength="50" class="form-control" style="width: 50%;"');
     // member fax
-    $form->addTextField('text', 'memberFax', __('Fax Number'), $rec_d['member_fax']??'', 'class="form-control" style="width: 50%;"');
+    $form->addTextField('text', 'memberFax', __('Fax Number'), $rec_d['member_fax']??'', 'maxlength="50" class="form-control" style="width: 50%;"');
     // member pin
-    $form->addTextField('text', 'memberPIN', __('Personal ID Number'), $rec_d['pin']??'', 'class="form-control" style="width: 50%;"');
+    $form->addTextField('text', 'memberPIN', __('Personal ID Number'), $rec_d['pin']??'', 'maxlength="50" class="form-control" style="width: 50%;"');
     // member notes
     $form->addTextField('textarea', 'memberNotes', __('Notes'), $rec_d['member_notes']??'', 'rows="2" class="form-control" style="width: 100%;"');
 
@@ -673,7 +711,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     echo '<style type="text/css">#simbioFormRowdummyPasswdField, #simbioFormRowdummyUserField {display: none}</style>';
 
     // member email
-    $form->addTextField('text', 'memberEmail', __('E-mail'), $rec_d['member_email']??'', 'class="form-control" style="width: 40%;" class="form-control"');
+    $form->addTextField('text', 'memberEmail', __('E-mail'), $rec_d['member_email']??'', 'maxlength="100" class="form-control" style="width: 40%;" class="form-control"');
     // member password
     $form->addTextField('password', 'memberPasswd', __('New Password'), null, 'class="form-control" style="width: 40%;" class="form-control" autocomplete="new-password"');
     // member password confirmation
