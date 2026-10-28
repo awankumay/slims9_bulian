@@ -16,75 +16,11 @@ foreach (include __DIR__ . '/defaults.inc.php' as $bk_key => [$bk_stock, $bk_own
   if ($bk_now === '' || strpos($bk_now, $bk_stock) !== false) $bk_conf[$bk_key] = $bk_own;
 }
 
-if (!function_exists('bk_card_text')) {
-  // nilai setelan disimpan dengan htmlentities(); kembalikan lalu escape ulang
-  function bk_card_text($value)
-  {
-    return htmlspecialchars(html_entity_decode((string)$value, ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8');
-  }
-
-  function bk_card_color($value, $default)
-  {
-    return preg_match('/^#[0-9a-fA-F]{6}$/', trim((string)$value)) ? trim($value) : $default;
-  }
-
-  function bk_card_number($value, $default)
-  {
-    $value = (float)str_replace(',', '.', (string)$value);
-    return $value > 0 ? $value : $default;
-  }
-
-  // inline SVG Code128; null bila Zend_Barcode tidak tersedia
-  function bk_card_barcode($code)
-  {
-    static $loaded = null;
-    if ($loaded === null) {
-      $loaded = false;
-      if (is_file(LIB . 'Zend/Barcode.php')) {
-        set_include_path(LIB . PATH_SEPARATOR . get_include_path());
-        require_once LIB . 'Zend/Barcode.php';
-        $loaded = true;
-      }
-    }
-    if (!$loaded) return null;
-    try {
-      $doc = Zend_Barcode::factory('code128', 'svg', ['text' => $code, 'drawText' => false, 'barHeight' => 40, 'factor' => 1], ['topOffset' => 0, 'leftOffset' => 0])->draw();
-      $svg = $doc->documentElement;
-      $w = $svg->getAttribute('width');
-      $h = $svg->getAttribute('height');
-      $svg->setAttribute('viewBox', "0 0 $w $h");
-      $svg->setAttribute('preserveAspectRatio', 'none');
-      $svg->setAttribute('role', 'img');
-      $svg->setAttribute('aria-label', 'Barcode ' . $code);
-      $svg->removeAttribute('width');
-      $svg->removeAttribute('height');
-      return $doc->saveXML($svg);
-    } catch (\Throwable $e) {
-      return null;
-    }
-  }
-
-  // inline SVG QR berisi nomor anggota polos (dibaca kiosk buku tamu)
-  function bk_card_qr($code)
-  {
-    if (!class_exists('BaconQrCode\\Writer')) return null;
-    try {
-      $renderer = new BaconQrCode\Renderer\ImageRenderer(
-        new BaconQrCode\Renderer\RendererStyle\RendererStyle(200, 1),
-        new BaconQrCode\Renderer\Image\SvgImageBackEnd()
-      );
-      $svg = (new BaconQrCode\Writer($renderer))->writeString($code);
-      return preg_replace('/^<\?xml[^>]*>\s*/', '', $svg);
-    } catch (\Throwable $e) {
-      return null;
-    }
-  }
-}
+require_once __DIR__ . '/card-lib.inc.php';
 
 $bk_primary = bk_card_color($bk_conf['primary_color'] ?? '', '#0067B8');
 $bk_accent = bk_card_color($bk_conf['accent_color'] ?? '', '#F9DA00');
-$bk_w = bk_card_number($bk_conf['box_width'] ?? 8.56, 8.56);
-$bk_h = bk_card_number($bk_conf['box_height'] ?? 5.4, 5.4);
+[$bk_w, $bk_h] = bk_card_size($bk_conf, false);
 $bk_show_qr = (int)($bk_conf['show_qr'] ?? 1) === 1;
 
 // logo: setelan logo perpustakaan (Sistem > Pengaturan) bila ada, kalau tidak logo tema kartu
