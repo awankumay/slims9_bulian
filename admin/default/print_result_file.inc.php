@@ -12,7 +12,8 @@
  *
  * This helper gives each generated page an unguessable, per-user filename and
  * removes the same user's previous page before writing a new one, so an old
- * result does not linger in the public folder.
+ * result does not linger in the public folder. Pages of the same kind older
+ * than an hour are removed too, including ones named in the old guessable way.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +41,9 @@ function slimsPrintResultName($dir, $prefix, $user)
 
     foreach (glob($dir . $base . '*.html') ?: [] as $old) {
         @unlink($old);
+    }
+    foreach (glob($dir . $prefix . '_*.html') ?: [] as $old) {
+        if (filemtime($old) < time() - 3600) @unlink($old);
     }
 
     try {

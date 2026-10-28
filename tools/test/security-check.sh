@@ -35,5 +35,7 @@ check "visitor response hides database errors in production" \
   "grep -q \"'status' => ENVIRONMENT === 'production'\" lib/contents/visitor.inc.php"
 check "visitor rate limit counts IPv6 per /64" \
   "grep -q 'self::rateLimitKey(' lib/Visitor.php"
+check "stock take report has an unguessable name" \
+  "grep -q 'slimsPrintResultName(REPBS' admin/modules/stock_take/finish.php"
 
 exit $fail
