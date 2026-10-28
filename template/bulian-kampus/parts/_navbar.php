@@ -101,33 +101,76 @@ if ($bk_ministry_logo === '' && trim((string)($sysconf['template']['bk_ministry_
                     </li>
                     <?php endforeach; ?>
                 </ul>
-                <ul class="navbar-nav ml-lg-auto">
-                    <?php if ($is_login) : ?>
-                    <li class="nav-item<?= $bk_page === 'member' ? ' active' : '' ?>">
-                        <a class="nav-link" href="index.php?p=member&sec=title_basket" aria-label="<?= __('Basket') ?>">
-                            <i class="fas fa-shopping-basket" aria-hidden="true"></i>
-                            <span id="count-basket" class="badge badge-warning"><?= count($_SESSION['m_mark_biblio'] ?? []) ?></span>
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown<?= $bk_page === 'member' ? ' active' : '' ?>">
-                        <a class="nav-link dropdown-toggle" href="#" id="bkMemberMenu" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <span class="bk-avatar" aria-hidden="true"><?= bk_initials($_SESSION['m_name'] ?? '') ?></span> <?= htmlspecialchars($_SESSION['m_name'] ?? '', ENT_QUOTES) ?>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="bkMemberMenu">
-                            <a class="dropdown-item" href="index.php?p=member"><i class="fas fa-user-circle mr-3"></i> <?= __('Profile') ?></a>
-                            <a class="dropdown-item" href="index.php?p=member&sec=bookmark"><i class="fas fa-bookmark mr-3"></i> <?= __('Bookmark') ?></a>
-                            <a class="dropdown-item" href="index.php?p=member&sec=membercard" target="_blank" rel="noopener"><i class="fas fa-address-card mr-3"></i> <?= __('View Library Card') ?></a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="index.php?p=member&logout=1"><i class="fas fa-sign-out-alt mr-3"></i> <?= __('Logout') ?></a>
-                        </div>
-                    </li>
-                    <?php else : ?>
-                    <li class="nav-item<?= $bk_page === 'member' ? ' active' : '' ?>">
-                        <a class="nav-link bk-nav__cta" href="<?= $bk_sso ?: 'index.php?p=member' ?>"><?= $bk_sso ? bk_t('Masuk SSO', 'SSO Login') : __('Member Area') ?></a>
-                    </li>
-                    <?php endif; ?>
-                </ul>
             </div>
+            <?php if ($is_login) :
+              $bk_basket = bk_basket_items($dbs);
+              $bk_status = bk_member_status();
+              $bk_first = htmlspecialchars(explode(' ', trim(ucwords(mb_strtolower((string)($_SESSION['m_name'] ?? '')))))[0] ?? '', ENT_QUOTES, 'UTF-8');
+            ?>
+            <ul class="navbar-nav bk-nav__member">
+                <li class="nav-item dropdown bk-cart<?= ($bk_page === 'member' && ($_GET['sec'] ?? '') === 'title_basket') ? ' active' : '' ?>">
+                    <a class="nav-link bk-nav__btn" href="index.php?p=member&amp;sec=title_basket" id="bkCartMenu" data-toggle="dropdown" data-bk-cart aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-shopping-basket" aria-hidden="true"></i>
+                        <span class="bk-nav__label"><?= bk_t('Keranjang', 'Basket') ?></span>
+                        <span id="count-basket" class="bk-count" data-rendered="<?= count($bk_basket) ?>"><?= count($_SESSION['m_mark_biblio'] ?? []) ?></span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right bk-pop bk-pop--cart" aria-labelledby="bkCartMenu">
+                        <div class="bk-pop__head">
+                            <strong><?= bk_t('Keranjang judul', 'Title basket') ?></strong>
+                            <span><span data-bk-cart-count><?= count($bk_basket) ?></span> <?= bk_t('dari', 'of') ?> <?= (int)$sysconf['max_biblio_mark'] ?> <?= bk_t('judul', 'titles') ?></span>
+                        </div>
+                        <?php if ($bk_basket) : ?>
+                        <ul class="bk-pop__list" data-bk-cart-list>
+                            <?php foreach (array_slice($bk_basket, 0, 5) as $b) : ?>
+                            <li>
+                                <span class="bk-pop__title"><?= htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="bk-avail bk-avail--<?= $b['available'] > 0 ? 'ok' : ((int)$b['copies'] > 0 ? 'out' : 'none') ?>"><?= $b['available'] > 0 ? bk_t('Tersedia', 'Available') . ' ' . $b['available'] . ' ' . bk_t('eksemplar', 'copies') : ((int)$b['copies'] > 0 ? bk_t('Sedang dipinjam', 'On loan') : bk_t('Belum ada eksemplar', 'No copies yet')) ?></span>
+                            </li>
+                            <?php endforeach; ?>
+                            <?php if (count($bk_basket) > 5) : ?><li class="bk-pop__more">+<?= count($bk_basket) - 5 ?> <?= bk_t('judul lain', 'more') ?></li><?php endif; ?>
+                        </ul>
+                        <?php endif; ?>
+                        <p class="bk-pop__empty" data-bk-cart-empty<?= $bk_basket ? ' hidden' : '' ?>><?= bk_t('Keranjang masih kosong. Tambahkan judul dari hasil pencarian.', 'Your basket is empty. Add titles from the search results.') ?></p>
+                        <p class="bk-pop__empty" data-bk-cart-stale hidden><?= bk_t('Isi keranjang berubah. Buka keranjang untuk melihat daftarnya.', 'Your basket changed. Open it to see the list.') ?></p>
+                        <div class="bk-pop__foot">
+                            <a class="bk-btn bk-btn--ghost" href="index.php?p=member&amp;sec=title_basket"><?= bk_t('Lihat keranjang', 'View basket') ?></a>
+                            <?php if ($bk_basket) : ?>
+                            <a class="bk-btn bk-btn--primary" href="index.php?p=member&amp;sec=title_basket#bk-reserve"><?= bk_t('Kirim pesanan', 'Send request') ?></a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </li>
+                <li class="nav-item dropdown<?= $bk_page === 'member' && ($_GET['sec'] ?? '') !== 'title_basket' ? ' active' : '' ?>">
+                    <a class="nav-link bk-nav__btn dropdown-toggle" href="index.php?p=member" id="bkMemberMenu" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="<?= bk_t('Menu anggota', 'Member menu') ?>">
+                        <span class="bk-avatar" aria-hidden="true"><?= bk_initials($_SESSION['m_name'] ?? '') ?></span>
+                        <span class="bk-nav__label"><?= $bk_first ?></span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right bk-pop bk-pop--member" aria-labelledby="bkMemberMenu">
+                        <div class="bk-pop__who">
+                            <span class="bk-avatar bk-avatar--lg" aria-hidden="true"><?= bk_initials($_SESSION['m_name'] ?? '') ?></span>
+                            <span>
+                                <strong><?= htmlspecialchars($_SESSION['m_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></strong>
+                                <span>ID <?= htmlspecialchars($_SESSION['mid'] ?? '', ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($_SESSION['m_member_type'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="bk-state bk-state--<?= $bk_status['key'] ?>"><?= $bk_status['label'] ?><?= in_array($bk_status['key'], ['active', 'soon'], true) ? ' · ' . bk_t('s.d.', 'until') . ' ' . $bk_status['expire_short'] : '' ?></span>
+                            </span>
+                        </div>
+                        <a class="dropdown-item" href="index.php?p=member"><i class="fas fa-book" aria-hidden="true"></i> <?= bk_t('Pinjaman saya', 'My loans') ?></a>
+                        <a class="dropdown-item" href="index.php?p=member&amp;sec=bookmark"><i class="fas fa-bookmark" aria-hidden="true"></i> <?= bk_t('Judul tertandai', 'Bookmarks') ?></a>
+                        <a class="dropdown-item" href="index.php?p=member&amp;sec=title_basket"><i class="fas fa-shopping-basket" aria-hidden="true"></i> <?= bk_t('Keranjang judul', 'Title basket') ?> <span class="bk-pop__n"><?= count($_SESSION['m_mark_biblio'] ?? []) ?></span></a>
+                        <a class="dropdown-item" href="index.php?p=member&amp;sec=my_account"><i class="fas fa-key" aria-hidden="true"></i> <?= bk_t('Akun &amp; kata sandi', 'Account &amp; password') ?></a>
+                        <a class="dropdown-item" href="index.php?p=member&amp;sec=membercard" target="_blank" rel="noopener"><i class="fas fa-address-card" aria-hidden="true"></i> <?= bk_t('Kartu anggota', 'Library card') ?> <span class="bk-pop__n"><?= bk_t('tab baru', 'new tab') ?></span></a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item bk-pop__out" href="index.php?p=member&amp;logout=1"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> <?= bk_t('Keluar', 'Log out') ?></a>
+                    </div>
+                </li>
+            </ul>
+            <?php else : ?>
+            <ul class="navbar-nav bk-nav__member">
+                <li class="nav-item<?= $bk_page === 'member' ? ' active' : '' ?>">
+                    <a class="nav-link bk-nav__cta" href="<?= $bk_sso ?: 'index.php?p=member' ?>"><?= $bk_sso ? bk_t('Masuk SSO', 'SSO Login') : __('Member Area') ?></a>
+                </li>
+            </ul>
+            <?php endif; ?>
         </div>
     </nav>
 </header>
