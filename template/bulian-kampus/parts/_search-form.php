@@ -17,12 +17,15 @@ if ($opac->invalid_token) {
             <div class="col-lg-8 mx-auto">
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <form class="" action="index.php" method="get" @submit.prevent="searchSubmit">
+                        <form class="bk-search__form" action="index.php" method="get" @submit.prevent="searchSubmit">
                             <input type="hidden" name="search" value="search">
                             <input ref="keywords" value="<?= htmlentities(getQuery('keywords')) ?>" v-model.trim="keywords"
                                    @focus="searchOnFocus" @blur="searchOnBlur" type="text" id="search-input"
                                    name="keywords" class="input-transparent w-100" autocomplete="off"
-                                   placeholder="<?= __('Enter keyword to search collection...');?>"/>
+                                   placeholder="<?= __('Enter keyword to search collection...');?>"
+                                   aria-label="<?= __('Enter keyword to search collection...');?>"/>
+                            <button type="button" class="bk-search__adv" data-toggle="modal" data-target="#adv-modal"><?= bk_t('Pencarian spesifik', 'Specific search') ?></button>
+                            <button type="submit" class="bk-search__go" aria-label="<?= __('Search') ?>"><i class="fas fa-search" aria-hidden="true"></i></button>
                         </form>
                     </div>
                 </div>

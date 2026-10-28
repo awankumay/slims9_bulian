@@ -16,19 +16,14 @@ $bk_quick = [
 $bk_quick = array_values(array_filter($bk_quick, fn ($q) => $q['u'] !== ''));
 
 $bk_public = [
-  ['t' => bk_t('Survei kepuasan', 'Satisfaction survey'), 'd' => bk_t('Bantu kami menilai layanan', 'Help us rate our services'), 'u' => bk_url('bk_link_skm')],
-  ['t' => 'SP4N-LAPOR!', 'd' => bk_t('Sampaikan pengaduan dan aspirasi', 'Complaints and feedback'), 'u' => bk_url('bk_link_lapor')],
-  ['t' => bk_t('Hasil survei', 'Survey results'), 'd' => bk_t('Indeks kepuasan masyarakat', 'Public satisfaction index'), 'u' => bk_url('bk_link_skm_result')],
-  ['t' => bk_t('Standar pelayanan', 'Service standards'), 'd' => bk_t('Persyaratan, waktu, dan biaya layanan', 'Requirements, time and fees'), 'u' => bk_url('bk_link_standar')],
+  ['t' => bk_t('Standar pelayanan', 'Service standards'), 'd' => bk_t('Persyaratan, prosedur, waktu layanan', 'Requirements, procedures and service times'), 'u' => bk_url('bk_link_standar')],
+  ['t' => bk_t('Survei kepuasan (SKM)', 'Satisfaction survey (SKM)'), 'd' => bk_t('Isi survei setelah menerima layanan', 'Fill in the survey after being served'), 'u' => bk_url('bk_link_skm')],
+  ['t' => bk_t('Hasil SKM', 'SKM results'), 'd' => bk_t('Indeks kepuasan per semester', 'Satisfaction index per semester'), 'u' => bk_url('bk_link_skm_result')],
+  ['t' => 'SP4N-LAPOR!', 'd' => bk_t('Sampaikan pengaduan pelayanan publik', 'Report a public service complaint'), 'u' => bk_url('bk_link_lapor')],
 ];
 $bk_public = array_values(array_filter($bk_public, fn ($q) => $q['u'] !== ''));
 ?>
 
-<section id="section1 container-fluid">
-    <header class="c-header bk-header">
-      <?php include '_navbar.php'; ?>
-    </header>
-</section>
 
 <main id="bk-main">
 <section class="bk-hero" aria-labelledby="bk-hero-title">
@@ -66,21 +61,51 @@ $bk_public = array_values(array_filter($bk_public, fn ($q) => $q['u'] !== ''));
 <?php if ($sysconf['template']['bk_new_collection'] ?? 1) : ?>
 <section class="bk-section bk-wrap" aria-labelledby="bk-new-title">
     <h2 id="bk-new-title" class="bk-h2"><?= bk_t('Koleksi terbaru', 'New collections') ?></h2>
-    <slims-group-subject url="index.php?p=api/subject/latest"></slims-group-subject>
-    <slims-collection url="index.php?p=api/biblio/latest"></slims-collection>
+    <?php $bk_latest = bk_latest_biblio($dbs, $sysconf['template']['classic_new_collection_item'] ?? 6); ?>
+    <?php if ($bk_latest) : ?>
+    <ul class="bk-books">
+        <?php foreach ($bk_latest as $b) :
+            $b_title = htmlspecialchars(strip_tags(stripslashes($b['title'])), ENT_QUOTES, 'UTF-8');
+            $b_img = trim((string)$b['image']) !== '' && $imagesDisk->isExists('docs/' . $b['image'])
+                ? SWB . 'lib/minigalnano/createthumb.php?filename=' . urlencode('images/docs/' . $b['image']) . '&width=240' : '';
+        ?>
+        <li class="bk-book">
+            <a href="index.php?p=show_detail&amp;id=<?= (int)$b['biblio_id'] ?>">
+                <span class="bk-book__cover<?= $b_img ? '' : ' bk-book__cover--empty' ?>">
+                    <?php if ($b_img) : ?><img loading="lazy" src="<?= $b_img ?>" alt=""><?php else : ?><i class="fas fa-book" aria-hidden="true"></i><?php endif; ?>
+                </span>
+                <span class="bk-book__title"><?= $b_title ?></span>
+            </a>
+            <?php if (!empty($b['author'])) : ?>
+            <span class="bk-book__author"><?= htmlspecialchars($b['author'], ENT_QUOTES, 'UTF-8') ?></span>
+            <?php endif; ?>
+        </li>
+        <?php endforeach; ?>
+    </ul>
+    <?php else : ?>
+    <p class="bk-muted"><?= __('No Result') ?></p>
+    <?php endif; ?>
 </section>
 <?php endif; ?>
 
 <section class="bk-section bk-wrap bk-info" aria-label="<?= bk_t('Informasi layanan', 'Service information') ?>">
     <div class="bk-card bk-hours">
-        <h2 class="bk-h3"><i class="far fa-clock" aria-hidden="true"></i> <?= bk_t('Jam layanan', 'Opening hours') ?></h2>
+        <h2 class="bk-h3"><?= bk_t('Jam layanan', 'Opening hours') ?></h2>
+        <?php $bk_hours_rows = bk_hours_rows($sysconf['template']['bk_hours'] ?? ''); ?>
+        <?php if ($bk_hours_rows) : ?>
+        <dl class="bk-hours__list">
+            <?php foreach ($bk_hours_rows as [$day, $time]) : ?>
+            <div><dt><?= $day ?></dt><dd><?= $time ?></dd></div>
+            <?php endforeach; ?>
+        </dl>
+        <?php else : ?>
         <p><?= bk_opt('bk_hours') ?></p>
-        <p class="bk-muted"><?= bk_t('Kunjungan dicatat dengan memindai kartu anggota di buku tamu.', 'Visits are recorded by scanning your member card at the guest book.') ?></p>
+        <?php endif; ?>
     </div>
     <div class="bk-card bk-maklumat">
         <h2 class="bk-h3"><?= bk_t('Maklumat pelayanan', 'Service pledge') ?></h2>
-        <blockquote><?= nl2br(bk_opt('bk_maklumat')) ?></blockquote>
-        <?php if ($u = bk_url('bk_link_standar')) : ?><a href="<?= $u ?>"><?= bk_t('Lihat standar pelayanan', 'See service standards') ?> →</a><?php endif; ?>
+        <blockquote>&ldquo;<?= nl2br(bk_opt('bk_maklumat')) ?>&rdquo;</blockquote>
+        <p class="bk-maklumat__by"><?= bk_t('Kepala', 'Head of') ?> <?= $sysconf['library_name'] ?></p>
     </div>
 </section>
 

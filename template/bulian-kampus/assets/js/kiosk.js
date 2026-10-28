@@ -15,7 +15,10 @@
     var title = $('bk-result-title');
     var text = $('bk-result-text');
     var guest = $('bk-guest');
-    var idle = { photo: photo.getAttribute('src'), title: title.textContent, text: text.textContent };
+    var stateText = state.querySelector('.bk-kiosk__state-text');
+    var idle = { title: title.textContent, text: text.textContent, state: stateText.textContent };
+    // foto bawaan SLiMS untuk anggota tanpa foto / tamu: tampilkan ikon saja
+    var noPhoto = /^(|person\.png|non_member\.png|photo\.png|avatar\.jpg)$/;
 
     var busy = false;
     var last = { code: '', at: 0, kind: '' };
@@ -47,21 +50,27 @@
 
     function setState(kind, message) {
         state.setAttribute('data-kind', kind);
-        state.lastChild.textContent = ' ' + message;
+        stateText.textContent = message;
+    }
+
+    function setPhoto(image) {
+        photo.hidden = !image;
+        if (image) photo.setAttribute('src', image);
+        else photo.removeAttribute('src');
     }
 
     function show(kind, heading, message, image) {
         card.setAttribute('data-state', kind);
         title.textContent = heading;
         text.textContent = message;
-        if (image) photo.setAttribute('src', image);
+        setPhoto(image);
         clearTimeout(resetTimer);
         resetTimer = setTimeout(function () {
             card.setAttribute('data-state', 'idle');
             title.textContent = idle.title;
             text.textContent = idle.text;
-            photo.setAttribute('src', idle.photo);
-            setState('ready', T.ready);
+            setPhoto(null);
+            setState('ready', scanner && !conf.autoCamera ? T.camActive : idle.state);
         }, 6000);
     }
 
@@ -115,9 +124,17 @@
                     if (guest) { guest.open = true; $('bk-guest-name').value = memberId; $('bk-guest-inst').focus(); }
                     message = T.guest;
                 }
-                var image = res.image ? conf.imageBase + encodeURIComponent(res.image).replace(/%2F/g, '/') : null;
+                var image = res.image && !noPhoto.test(res.image) ? conf.imageBase + encodeURIComponent(res.image).replace(/%2F/g, '/') : null;
                 show(kind, kind === 'ok' ? T.welcome : T.attention, message, image);
-                setState(kind === 'ok' ? 'ok' : 'warn', message);
+                // baris status di bawah kolom ID: ringkas + nomor yang dipindai
+                var tag = institution ? '' : ' · ' + memberId;
+                var short = {
+                    checked_in: T.recorded + tag,
+                    already_checked_in: T.already + tag,
+                    expired: T.expired + tag,
+                    need_institution: T.unknown
+                }[needInstitution && !institution ? 'need_institution' : res.code] || message;
+                setState(kind === 'ok' ? 'ok' : 'warn', short);
                 if (last.code === memberId) last.kind = kind;
                 if (kind === 'ok') speak(message);
             })
@@ -179,44 +196,69 @@
     // ---------------------------------------------------------------- kamera
 
     var camBtn = $('bk-cam-toggle');
-    var camView = $('bk-cam-view');
+    var camWrap = $('bk-cam-wrap');
+    var camNote = $('bk-cam-note');
     var scanner = null;
+
+    function camLabel(on) {
+        if (!camBtn) return;
+        camBtn.querySelector('span').textContent = on ? T.camOn : T.camOff;
+        camBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+
+    function camProblem(message) {
+        if (conf.autoCamera) {
+            // layout kamera: kotak kamera tetap tampil, pesan di dalamnya
+            if (camNote) camNote.textContent = message;
+            camWrap.setAttribute('data-off', '1');
+            return;
+        }
+        camWrap.hidden = true;
+        show('warn', T.attention, message, null);
+    }
 
     function stopCamera() {
         if (!scanner) return Promise.resolve();
         var s = scanner;
         scanner = null;
         return s.stop().catch(function () {}).then(function () {
-            camView.hidden = true;
-            camBtn.textContent = T.camOff;
+            camWrap.hidden = true;
+            camLabel(false);
+            setState('ready', idle.state);
         });
     }
 
-    if (camBtn) {
-        camBtn.addEventListener('click', function () {
-            if (scanner) { stopCamera(); return; }
-            if (!window.isSecureContext) { show('warn', T.attention, T.camInsecure, null); return; }
-            if (typeof Html5Qrcode === 'undefined') { show('error', T.attention, T.camFail, null); return; }
-            camView.hidden = false;
-            var F = Html5QrcodeSupportedFormats;
-            scanner = new Html5Qrcode('bk-cam-view', {
-                formatsToSupport: [F.QR_CODE, F.CODE_128, F.CODE_39, F.EAN_13],
-                verbose: false
-            });
-            scanner.start(
-                { facingMode: 'user' },
-                { fps: 8, qrbox: function (w, h) { return { width: Math.floor(w * 0.85), height: Math.floor(h * 0.85) }; } },
-                function (decoded) { if (!busy) submitCode(decoded); },
-                function () {}
-            ).then(function () {
-                camBtn.textContent = T.camOn;
-            }).catch(function () {
-                scanner = null;
-                camView.hidden = true;
-                show('error', T.attention, T.camFail, null);
-            });
+    function startCamera() {
+        if (!window.isSecureContext) { camProblem(T.camInsecure); return; }
+        if (typeof Html5Qrcode === 'undefined') { camProblem(T.camFail); return; }
+        camWrap.hidden = false;
+        var F = Html5QrcodeSupportedFormats;
+        scanner = new Html5Qrcode('bk-cam-view', {
+            formatsToSupport: [F.QR_CODE, F.CODE_128, F.CODE_39, F.EAN_13],
+            verbose: false
+        });
+        // tanpa qrbox: seluruh gambar dipindai, bingkai kuning hanya panduan
+        scanner.start(
+            { facingMode: 'user' },
+            { fps: 8 },
+            function (decoded) { if (!busy) submitCode(decoded); },
+            function () {}
+        ).then(function () {
+            camLabel(true);
+            if (!conf.autoCamera) setState('ok', T.camActive);
+        }).catch(function () {
+            scanner = null;
+            camProblem(T.camFail);
         });
     }
+
+    if (camBtn && camWrap) {
+        camBtn.addEventListener('click', function () {
+            if (scanner) stopCamera();
+            else startCamera();
+        });
+    }
+    if (conf.autoCamera && camWrap) startCamera();
 
     // ----------------------------------------------------------------- jam
 
@@ -230,6 +272,5 @@
     tick();
     setInterval(tick, 30000);
 
-    setState('ready', T.ready);
     focusInput();
 })();

@@ -25,12 +25,38 @@ peramban), tautan "Langsung ke konten", fokus keyboard yang terlihat, dan
 pilihan bahasa ID/EN. Font Lato dan Saira (SIL OFL) disertakan lokal sehingga
 OPAC tetap rapi di jaringan tanpa internet.
 
+Kepala halaman **lengket (sticky)**: saat digulir, strip dan identitas ikut
+tergulir dan hanya menu utama yang tetap di atas layar, dengan bayangan tipis.
+Tingginya diukur ulang oleh `assets/js/bulian-kampus.js` bila ukuran teks atau
+lebar layar berubah, dan tautan jangkar (`#...`) tidak tertutup menu. Tanpa
+JavaScript kepala halaman kembali biasa (tidak lengket).
+
+Beranda menampilkan **Koleksi terbaru** langsung dari basis data (judul,
+sampul, pengarang pertama; jumlah dari opsi lama `classic_new_collection_item`,
+bawaan 6). Area anggota menampilkan kartu ringkas data keanggotaan di atas tab
+bawaan SLiMS; tanggal harus kembali yang tinggal 3 hari atau lewat diberi warna.
+
 Opsi "Enable this theme for mobile?" sebaiknya **Yes**. Bila **No**, pengunjung
 ponsel dialihkan ke tema `lightweight`.
 
 ## 2. Buku tamu dengan pindai kartu
 
-Alamat kiosk: `index.php?p=visitor` (bisa ditambah `&room=KODE`).
+Alamat kiosk: `index.php?p=visitor` (bisa ditambah `&room=KODE`; nama ruang
+tampil di pojok layar bila kodenya terdaftar).
+
+Ada tiga tata letak. Pilih bawaan di Kustomisasi tema (*Buku tamu: tata
+letak*), atau timpa per perangkat dengan parameter `layout`, mis. layar
+kamera di pintu masuk dan layar biasa di meja sirkulasi:
+
+| `layout` | Tampilan | Cocok untuk |
+|---|---|---|
+| `split` (bawaan) | Panel pindai terang di kiri, sapaan gelap di kanan | Monitor lebar dengan pemindai USB |
+| `center` | Satu panel di tengah, hasil di atas form | Tablet tegak, layar kecil |
+| `camera` | Kamera utama gelap, petunjuk 3 langkah di kanan; kamera langsung menyala | Webcam / tablet tanpa pemindai USB (butuh HTTPS) |
+
+Contoh: `index.php?p=visitor&room=R2&layout=camera`. Nilai lain diabaikan.
+Layout `camera` selalu memuat pembaca kamera; kolom ID untuk pemindai USB
+tetap ada di bawah kamera.
 
 - **Pemindai USB (barcode atau QR)**: siap pakai. Kolom ID selalu fokus;
   pemindai mengetik nomor anggota lalu Enter.

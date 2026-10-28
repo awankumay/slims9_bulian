@@ -7,10 +7,10 @@
 $setBookmarked = trim(isset($_SESSION['bookmark'][$biblio_id]) ? 'bg-success text-white rounded-lg px-2 py-1' : 'text-secondary px-2 py-1');
 ?>
 
-<div class="container">
-    <div class="flex flex-wrap">
-        <div class="w-64 mb-2">
-            <div class="bg-grey-light p-12 rounded">
+<div class="bk-detail">
+    <div class="bk-detail__grid">
+        <div class="bk-detail__aside">
+            <div class="bk-detail__cover">
                 <div class="shadow">
                   <?= $image; ?>
                 </div>
@@ -31,22 +31,20 @@ $setBookmarked = trim(isset($_SESSION['bookmark'][$biblio_id]) ? 'bg-success tex
                 </a>
             </div>
         </div>
-        <div class="flex-1 p-0 px-md-4">
-            <p class="lead"><i class="fas fa-bookmark text-green"></i> <?= $gmd_name; ?></p>
-            <blockquote class="blockquote">
-                <h4 class="mb-2"><?= stripslashes($title); ?></h4>
-                <footer class="blockquote-footer"><?= str_replace("<br />", '; ', $authors); ?></footer>
-            </blockquote>
+        <article class="bk-detail__main">
+            <p class="bk-detail__gmd"><i class="fas fa-bookmark" aria-hidden="true"></i> <?= $gmd_name; ?></p>
+            <h1 class="bk-detail__title"><?= stripslashes($title); ?></h1>
+            <p class="bk-detail__authors">— <?= str_replace("<br />", '; ', $authors); ?></p>
             <hr>
-            <p class="text-grey-darker">
+            <p class="bk-detail__notes">
               <?= $notes ? $notes : '<i>'.__('Description Not Available').'</i>'; ?>
             </p>
             <hr>
 
-            <h5 class="mt-4 mb-1"><?= __('Availability'); ?></h5>
+            <h2 class="bk-detail__h"><?= __('Availability'); ?></h2>
             <?= ($availability) ? $availability : '<p class="text-grey-dark">' . __('No copy data') . '</p>'; ?>
-            <h5 class="mt-4 mb-1"><?= __('Detail Information'); ?></h5>
-            <dl class="row">
+            <h2 class="bk-detail__h"><?= __('Detail Information'); ?></h2>
+            <dl class="row bk-detail__dl">
                 <dt class="col-sm-3"><?= __('Series Title'); ?></dt>
                 <dd class="col-sm-9">
                     <div itemprop="alternativeHeadline"
@@ -119,8 +117,8 @@ $setBookmarked = trim(isset($_SESSION['bookmark'][$biblio_id]) ? 'bg-success tex
 
           <?php if (count($biblio_custom) > 0) {
             ; ?>
-              <h5 class="mt-4 mb-1"><?= __('Other Information'); ?></h5>
-              <dl class="row">
+              <h2 class="bk-detail__h"><?= __('Other Information'); ?></h2>
+              <dl class="row bk-detail__dl">
                 <?php foreach ($biblio_custom as $item) { ?>
                     <dt class="col-sm-3"><?= $item['label']; ?></dt>
                     <dd class="col-sm-9">
@@ -131,22 +129,22 @@ $setBookmarked = trim(isset($_SESSION['bookmark'][$biblio_id]) ? 'bg-success tex
               </dl>
           <?php }; ?>
 
-            <h5 class="mt-4 mb-1"><?= __('Other version/related'); ?></h5>
+            <h2 class="bk-detail__h"><?= __('Other version/related'); ?></h2>
             <div>
               <?php echo ($related) ? $related : '<p class="text-grey-dark">' . __('No other version available') . '</p>'; ?>
             </div>
 
-            <h5 id="attachment" class="mt-4 mb-1"><?= __('File Attachment'); ?></h5>
+            <h2 id="attachment" class="bk-detail__h"><?= __('File Attachment'); ?></h2>
             <div itemprop="associatedMedia">
               <?= !$file_att ? '<i>'.__('No Data').'</i>' : $file_att ; ?>
             </div>
 
-            <h5 id="comment" class="mt-4 mb-1"><?= __('Comments'); ?></h5>
+            <h2 id="comment" class="bk-detail__h"><?= __('Comments'); ?></h2>
           <?php echo showComment($biblio_id); ?>
           <?php if(!isset($_SESSION['mid']) && $sysconf['comment']['enable']) : ?>
               <hr>
               <a href="index.php?p=member" class="btn btn-outline-primary"><?= __('You must be logged in to post a comment'); ?></a>
           <?php endif; ?>
-        </div>
+        </article>
     </div>
 </div>
