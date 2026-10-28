@@ -12,11 +12,12 @@ require_once '../sysconfig.inc.php';
 // session checking
 require SB.'admin/default/session.inc.php';
 require SB.'admin/default/session_check.inc.php';
-require SB.'admin/default/ajax_lookup_guard.inc.php';
 
+// only the ID columns the forms check for uniqueness
+$id_columns = ['item' => 'item_code', 'member' => 'member_id'];
 $table_name = trim($_POST['tableName'] ?? '');
 $table_fields = trim($_POST['tableFields'] ?? '');
-if (!ajaxLookupIsAllowed($table_name, [$table_fields])) {
+if (($id_columns[$table_name] ?? null) !== $table_fields) {
   die('<strong style="color: #FF0000;">' . __('Invalid table name format') . '</strong>');
 }
 if (isset($_POST['id']) AND !empty($_POST['id'])) {
