@@ -17,6 +17,10 @@ for f in theme membercard_theme plugin_action mailsetting backup_config ucsettin
   check "system/$f.php requires the system privilege" \
     "grep -q \"havePrivilege('system', 'w')\" admin/modules/system/$f.php"
 done
+check "image upload check works without the exif extension" \
+  "grep -q \"function_exists('exif_imagetype')\" lib/Filesystems/Guard.php"
+check "bibliography cover upload checks the file is an image" \
+  "grep -q 'images->isImageFile()' admin/modules/bibliography/index.php"
 check "bulian-kampus prints no raw theme option" \
   "! grep -rq 'bk_html(' template/bulian-kampus"
 check "member card template name is a single directory" \

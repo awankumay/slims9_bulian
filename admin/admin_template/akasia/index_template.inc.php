@@ -53,7 +53,7 @@ include 'function.php';
   
   if (!empty($webicon) && $imagesDisk->isExists($path = 'default/' . $webicon))
   {
-      $icon = SWB . 'lib/minigalnano/createthumb.php?filename=images/' . $path . '&width=130';
+      $icon = SWB . 'images/' . $path . '?v=' . ($sysconf['static_file_version'] ?? '');
   }
   ?>
 

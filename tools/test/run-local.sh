@@ -77,6 +77,7 @@ wait_up || fail "web UI did not answer 200 within 300s"
 dc logs slims > "$OUT/slims.log" 2>&1
 check "OPAC index.php" "$(code index.php)" 200
 check "PHP version" "$(dc exec -T slims php -r 'echo PHP_VERSION;')" "$(echo "$PHP_IMAGE" | sed -E 's/^[^:]*:([0-9.]+).*/\1/')"
+check "PHP exif extension" "$(dc exec -T slims php -r 'echo (int)extension_loaded("exif");')" 1
 ADMIN_PASS=$(sed -n 's/.*Password : \([A-Za-z0-9]*\).*/\1/p' "$OUT/slims.log" | tail -1)
 "$TESTDIR/login.sh" "$BASE" "$ADMIN_PASS" "$OUT/cookies.txt" > "$OUT/login.txt"
 check "admin login" "$(grep -c 'ADMIN_LOGGED_IN=yes' "$OUT/login.txt")" 1

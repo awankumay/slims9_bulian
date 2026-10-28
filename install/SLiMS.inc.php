@@ -63,6 +63,8 @@ class SLiMS
     $message .= $this->isMbStringOk() ? '<span>Mbstring : installed</span>' : '<divMbstring : <strong class="text-red-500">not installed. PHP Mbstring is used to convert strings to different encodings.</strong></div>';
     $message .= $this->isGettextOk() ? '<span>Gettext : installed</span>' : '<div>Gettext : <strong class="text-red-500">not installed. PHP gettext required for translation to other language.</strong></div>';
     $message .= $this->isPdoOk() ? '<span>PDO MySQL : installed</span>' : '<div>PDO : <strong class="text-red-500">not installed. PHP pdo required by some feature in SLiMS.</strong></div>';
+    // EXIF is optional, image uploads fall back to getimagesize() without it
+    $message .= extension_loaded('exif') ? '<span>EXIF : installed</span>' : '<div>EXIF : <strong class="text-red-500">not installed. It\'s optional, but recommended for checking uploaded images.</strong></div>';
     // Yaz is optional
     $message .= $this->isYazOk() ? '<span>YAZ : installed</span>' : '<div>YAZ : <strong class="text-red-500">not installed. It\'s optional, but will be needed if you want to use Z39.50 protocol.</strong></div>';
     $message .= '</div>';

@@ -15,7 +15,9 @@ RUN apt-get update \
     && docker-php-ext-install -j$(nproc) iconv \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-enable gd
+    && docker-php-ext-enable gd \
+    && docker-php-ext-install exif \
+    && docker-php-ext-enable exif
 RUN rm -rf /var/lib/apt/lists/*
 
 RUN a2enmod rewrite headers remoteip
