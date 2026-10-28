@@ -131,7 +131,18 @@ if (isset($_POST['saveData'])) { //echo '<pre>'; var_dump($_SESSION); echo '</pr
     $realName = trim(strip_tags($_POST['realName']));
     $passwd1 = $dbs->escape_string(trim($_POST['passwd1']));
     $passwd2 = $dbs->escape_string(trim($_POST['passwd2']));
-    $old_user_image = $_POST['old_user_image'] ?? '';
+    // only the administrator may edit other users; check before any file is touched
+    $updateRecordID = isset($_POST['updateRecordID']) ? (int)$_POST['updateRecordID'] : 0;
+    if ($updateRecordID && $_SESSION['uid'] != 1 && $updateRecordID !== (int)$_SESSION['uid']) {
+        toastr(__('You don\'t have enough privileges to modify this user.'))->error();
+        exit();
+    }
+    // the image to replace comes from the stored record, never from the form
+    $old_user_image = '';
+    if ($updateRecordID) {
+        $img_q = $dbs->query('SELECT user_image FROM user WHERE user_id=' . $updateRecordID);
+        $old_user_image = basename((string)($img_q ? ($img_q->fetch_row()[0] ?? '') : ''));
+    }
 
     // check form validity
     if (empty($userName) OR empty($realName)) {
@@ -270,12 +281,6 @@ if (isset($_POST['saveData'])) { //echo '<pre>'; var_dump($_SESSION); echo '</pr
             /* UPDATE RECORD MODE */
             // remove input date
             unset($data['input_date']);
-            // filter update record ID
-            $updateRecordID = (integer)$_POST['updateRecordID'];
-            if ($_SESSION['uid'] != 1 && $updateRecordID !== (integer)$_SESSION['uid']) {
-                toastr(__('You don\'t have enough privileges to modify this user.'))->error();
-                exit();
-            }
 
             // update the data
             $update = $sql_op->update('user', $data, 'user_id='.$updateRecordID);
@@ -431,7 +436,6 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
         $form->record_title = $rec_d['realname'];
         // submit button attribute
         $form->submit_button_attr = 'name="saveData" value="'.__('Update').'" class="btn btn-default"';
-        $form->addHidden('old_user_image', $rec_d['user_image'] ?? '');
     }
 
     /* Form Element(s) */

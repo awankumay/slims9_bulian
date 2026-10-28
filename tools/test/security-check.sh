@@ -29,5 +29,7 @@ check "vocabulary lookup casts topic_id to int" \
   "grep -q 'topic_id=. \. (int)\$row\[0\]' admin/AJAX_vocabolary_control.php"
 check "language selection only accepts xx_XX codes" \
   "grep -q 'dropInvalidLang(\$_COOKIE, .select_lang.)' sysconfig.inc.php"
+check "user image to delete is not taken from the form" \
+  "! grep -q \"_POST\['old_user_image'\]\" admin/modules/system/app_user.php"
 
 exit $fail
