@@ -27,5 +27,7 @@ check "AJAX ID check only accepts fixed table/column pairs" \
   "grep -q \"'member' => 'member_id'\" admin/AJAX_check_id.php"
 check "vocabulary lookup casts topic_id to int" \
   "grep -q 'topic_id=. \. (int)\$row\[0\]' admin/AJAX_vocabolary_control.php"
+check "language selection only accepts xx_XX codes" \
+  "grep -q 'dropInvalidLang(\$_COOKIE, .select_lang.)' sysconfig.inc.php"
 
 exit $fail
