@@ -53,14 +53,6 @@ function bk_opt($key, $default = '')
   return htmlspecialchars(stripslashes(trim($value)), ENT_QUOTES, 'UTF-8');
 }
 
-// read a theme option meant to be printed as HTML (already filtered with
-// allowable_tags when the setting is saved)
-function bk_html($key, $default = '')
-{
-  global $sysconf;
-  return stripslashes((string)($sysconf['template'][$key] ?? $default));
-}
-
 // only accept http(s), relative or anchor links coming from theme options
 function bk_url($key, $default = '')
 {

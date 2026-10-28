@@ -79,7 +79,7 @@ $bk_public = array_values(array_filter($bk_public, fn ($q) => $q['u'] !== ''));
     </div>
     <div class="bk-card bk-maklumat">
         <h2 class="bk-h3"><?= bk_t('Maklumat pelayanan', 'Service pledge') ?></h2>
-        <blockquote><?= nl2br(bk_html('bk_maklumat')) ?></blockquote>
+        <blockquote><?= nl2br(bk_opt('bk_maklumat')) ?></blockquote>
         <?php if ($u = bk_url('bk_link_standar')) : ?><a href="<?= $u ?>"><?= bk_t('Lihat standar pelayanan', 'See service standards') ?> →</a><?php endif; ?>
     </div>
 </section>

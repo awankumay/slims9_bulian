@@ -25,6 +25,9 @@ do_checkIP('smc');
 do_checkIP('smc-system');
 
 require SB . 'admin/default/session_check.inc.php';
+if (!utility::havePrivilege('system', 'r') || ($_SERVER['REQUEST_METHOD'] === 'POST' && !utility::havePrivilege('system', 'w'))) {
+    die('<div class="errorBox">' . __('You don\'t have enough privileges to access this area!') . '</div>');
+}
 require SIMBIO . 'simbio_FILE/simbio_directory.inc.php';
 require SIMBIO . 'simbio_GUI/table/simbio_table.inc.php';
 require SIMBIO . 'simbio_GUI/form_maker/simbio_form_table_AJAX.inc.php';
@@ -71,7 +74,7 @@ if (isset($_POST['template'])) {
     $data['css'] = file_get_contents(UPLOAD.'membercard/' . $sysconf['print']['membercard']['template']. '/style.css');
   }
 
-  $data['template'] = utility::filterData('template', 'post', true, true, true);
+  $data['template'] = basename(utility::filterData('template', 'post', true, true, true));
   
   // execute registered hook
   \SLiMS\Plugins::getInstance()->execute('membercard_theme_update', [$data]); 
@@ -90,7 +93,7 @@ if (isset($_POST['template'])) {
 if (isset($_GET['customize'])) {
   ob_start();
   $theme_type = utility::filterData('customize', 'get', true, true, true);
-  $theme_dir = utility::filterData('theme', 'get', true, true, true);
+  $theme_dir = basename(utility::filterData('theme', 'get', true, true, true));
 
   // execute registered hook
   \SLiMS\Plugins::getInstance()->execute('membercard_theme_customize', [$theme_dir]);  

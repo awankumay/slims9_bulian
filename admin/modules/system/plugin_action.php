@@ -20,6 +20,9 @@ require __DIR__ . '/../../../sysconfig.inc.php';
 
 require SB . 'admin/default/session.inc.php';
 require SB . 'admin/default/session_check.inc.php';
+if (!utility::havePrivilege('system', 'r') || ($_SERVER['REQUEST_METHOD'] === 'POST' && !utility::havePrivilege('system', 'w'))) {
+    die('<div class="errorBox">' . __('You don\'t have enough privileges to access this area!') . '</div>');
+}
 
 $plugins = Plugins::getInstance();
 $upload_success = false;
