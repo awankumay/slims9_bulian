@@ -67,6 +67,7 @@ Service `cloudflared` ada di profile `tunnel` dan tidak jalan tanpa `--profile t
    CLOUDFLARE_TUNNEL_TOKEN=<token>
    HTTP_BIND=127.0.0.1
    ```
+   Jangan lewatkan `HTTP_BIND=127.0.0.1`: dengan nilai bawaan `0.0.0.0`, port aplikasi tetap terbuka langsung sehingga akses bisa melewati Cloudflare (dan aturan WAF/Access di sana).
 4. Jalankan seperti biasa:
    ```bash
    docker compose up -d --build
