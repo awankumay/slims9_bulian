@@ -358,14 +358,15 @@ $str_input .= '<div class="mt-2 ml-2">Maximum '.$sysconf['max_image_upload'].' K
 $str_input .= '<strong class="d-block mt-2">'.__('Favicon').'</strong>';
 if(isset($sysconf['webicon']) && $imagesDisk->isExists('default/'.$sysconf['webicon']) && $sysconf['webicon']!=''){
     $str_input .= '<div style="padding:10px;">';
-    $str_input .= '<img src="../lib/minigalnano/createthumb.php?filename=images/default/'.$sysconf['webicon'].'&width=130" class="img-fluid rounded" alt="Image cover">';
+    // minigalnano cannot read .ico, show the icon itself
+    $str_input .= '<img src="'.SWB.'images/default/'.htmlspecialchars($sysconf['webicon']).'?v='.rand().'" width="32" height="32" class="rounded mr-2" alt="Favicon">';
     $str_input .= '<a href="'.MWB.'system/index.php" postdata="removeImage=true&wimg='.$sysconf['webicon'].'" class="btn btn-sm btn-danger">'.__('Remove Image').'</a></div>';
 }
 $str_input .= '<div class="custom-file col-3">';
 $str_input .= simbio_form_element::textField('file', 'icon', '', 'class="custom-file-input" id="customFile" accept=".ico,.png"');
 $str_input .= '<label class="custom-file-label" for="customFile">'.__('Choose file').'</label>';
 $str_input .= '</div>';
-$str_input .= '<div class="mt-2 ml-2">Maximum 100 KB</div>';
+$str_input .= '<div class="mt-2 ml-2">Maximum '.$sysconf['max_image_upload'].' KB</div>';
 $str_input .= <<<HTML
 <script>
 $('.custom-file input').on('change',function(){

@@ -67,6 +67,7 @@ Service `cloudflared` ada di profile `tunnel` dan tidak jalan tanpa `--profile t
    CLOUDFLARE_TUNNEL_TOKEN=<token>
    HTTP_BIND=127.0.0.1
    ```
+   Jangan lewatkan `HTTP_BIND=127.0.0.1`: dengan nilai bawaan `0.0.0.0`, port aplikasi tetap terbuka langsung sehingga akses bisa melewati Cloudflare (dan aturan WAF/Access di sana).
 4. Jalankan seperti biasa:
    ```bash
    docker compose up -d --build
@@ -116,7 +117,7 @@ Uji upgrade ini sudah dijalankan secara lokal: stack lama dengan data → compos
 | `./slims.sh status` | Status container, kode HTTP, CPU/memori, ukuran volume |
 | `./slims.sh start` / `stop` | Start / stop semua service (data tetap) |
 | `./slims.sh restart [service]` | Restart semua atau satu service (`slims`, `db`, `cloudflared`) |
-| `./slims.sh logs [service]` | Ikuti 200 baris log terakhir |
+| `./slims.sh logs [service]` | Ikuti 200 baris log terakhir, diwarnai per kode HTTP (2xx hijau, 3xx cyan, 4xx kuning, 5xx merah) serta baris error/warning PHP, Apache, MariaDB, cloudflared. Warna mati otomatis bila output di-pipe atau `NO_COLOR=1` |
 | `./slims.sh db` | Konsol MariaDB sebagai akun aplikasi (kredensial diambil dari container DB, `.env` tidak dibaca) |
 | `./slims.sh backup` | Dump DB ke `backups/slims-<waktu>.sql.gz` (folder `700`, file `600`, tidak di-commit) |
 | `./slims.sh shell [service]` | Shell di dalam container (bawaan `slims`) |

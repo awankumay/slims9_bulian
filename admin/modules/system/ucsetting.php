@@ -19,6 +19,9 @@ do_checkIP('smc-system');
 // start the session
 require SB.'admin/default/session.inc.php';
 require SB.'admin/default/session_check.inc.php';
+if (!utility::havePrivilege('system', 'r') || ($_SERVER['REQUEST_METHOD'] === 'POST' && !utility::havePrivilege('system', 'w'))) {
+    die('<div class="errorBox">' . __('You don\'t have enough privileges to access this area!') . '</div>');
+}
 require SIMBIO.'simbio_GUI/form_maker/simbio_form_table_AJAX.inc.php';
 require SIMBIO.'simbio_GUI/table/simbio_table.inc.php';
 require SIMBIO.'simbio_DB/simbio_dbop.inc.php';

@@ -545,6 +545,20 @@ $localisation->registerLanguageFromPlugin();
 // load global settings from database. Uncomment below lines if you dont want to load it
 utility::loadSettings($dbs);
 
+// Language codes look like en_US. Anything else would reach HTML, JavaScript
+// and locale paths unescaped, so drop it before any code (themes included) reads it.
+function dropInvalidLang(array &$source, string $key): void
+{
+    if (isset($source[$key]) && !(is_string($source[$key]) && preg_match('/^[a-z]{2}_[A-Z]{2}\z/', $source[$key]))) {
+        unset($source[$key]);
+    }
+}
+dropInvalidLang($_GET, 'select_lang');
+dropInvalidLang($_POST, 'select_lang');
+dropInvalidLang($_POST, 'default_lang');
+dropInvalidLang($_COOKIE, 'select_lang');
+dropInvalidLang($_COOKIE, 'admin_lang');
+
 // check for user language selection if we are not in admin areas
 if (stripos($_SERVER['PHP_SELF'], '/admin') === false) {
     if (isset($_GET['select_lang'])) {

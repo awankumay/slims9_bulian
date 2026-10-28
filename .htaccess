@@ -20,6 +20,24 @@ Options -Indexes
 # Options +FollowSymLinks
 Options +SymLinksIfOwnerMatch
 
+# Halaman error bertema untuk URL tidak valid, akses ditolak, dan error server.
+# Path harus dari document root; jika SLiMS dipasang di subfolder (mis. /slims),
+# ganti "/errorpage.php" menjadi "/slims/errorpage.php".
+ErrorDocument 400 /errorpage.php
+ErrorDocument 401 /errorpage.php
+ErrorDocument 403 /errorpage.php
+ErrorDocument 404 /errorpage.php
+ErrorDocument 405 /errorpage.php
+ErrorDocument 408 /errorpage.php
+ErrorDocument 410 /errorpage.php
+ErrorDocument 413 /errorpage.php
+ErrorDocument 414 /errorpage.php
+ErrorDocument 429 /errorpage.php
+ErrorDocument 500 /errorpage.php
+ErrorDocument 502 /errorpage.php
+ErrorDocument 503 /errorpage.php
+ErrorDocument 504 /errorpage.php
+
 # Force simple error message for requests for non-existent favicon.ico.
 <Files favicon.ico>
   # There is no end quote below, for compatibility with Apache 1.3.

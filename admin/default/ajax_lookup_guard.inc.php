@@ -1,7 +1,7 @@
 <?php
 /**
  * Table and column guard for the admin AJAX lookup handlers
- * (AJAX_lookup_handler.php, AJAX_vocabolary_control.php, AJAX_check_id.php).
+ * (AJAX_lookup_handler.php, AJAX_vocabolary_control.php).
  *
  * These handlers build SQL from table and column names sent by the browser,
  * so any logged-in staff account could otherwise read any table (for example
@@ -20,6 +20,10 @@ if (!defined('INDEX_AUTH')) {
 }
 
 /**
+ * `member` is not allowed: no lookup form uses it, and it would return member
+ * e-mails, addresses and password hashes to staff without the membership
+ * privilege. AJAX_check_id.php has its own fixed table/column list.
+ *
  * @param string $table  table name as received from the client
  * @param array  $fields column names as received from the client
  * @return bool true when the table is allowed and every name is a plain identifier
@@ -29,7 +33,7 @@ function ajaxLookupIsAllowed(string $table, array $fields): bool
     $identifier = '/^[a-zA-Z0-9_]+$/';
     if (!preg_match($identifier, $table)) return false;
 
-    $allowed = array_merge(['biblio', 'item', 'member'], (array) config('ajax_lookup_allowed_tables', []));
+    $allowed = array_merge(['biblio', 'item'], (array) config('ajax_lookup_allowed_tables', []));
     if (!in_array($table, $allowed, true) && strpos($table, 'mst_') !== 0) return false;
 
     if (empty($fields)) return false;

@@ -25,12 +25,76 @@ peramban), tautan "Langsung ke konten", fokus keyboard yang terlihat, dan
 pilihan bahasa ID/EN. Font Lato dan Saira (SIL OFL) disertakan lokal sehingga
 OPAC tetap rapi di jaringan tanpa internet.
 
+Kepala halaman **lengket (sticky)**: saat digulir, strip dan identitas ikut
+tergulir dan hanya menu utama yang tetap di atas layar, dengan bayangan tipis.
+Tingginya diukur ulang oleh `assets/js/bulian-kampus.js` bila ukuran teks atau
+lebar layar berubah, dan tautan jangkar (`#...`) tidak tertutup menu. Tanpa
+JavaScript kepala halaman kembali biasa (tidak lengket).
+
+Beranda menampilkan **Koleksi terbaru** langsung dari basis data (judul,
+sampul, pengarang pertama; jumlah dari opsi lama `classic_new_collection_item`,
+bawaan 6). Area anggota menampilkan kartu ringkas data keanggotaan di atas tab
+bawaan SLiMS; tanggal harus kembali yang tinggal 3 hari atau lewat diberi warna.
+
 Opsi "Enable this theme for mobile?" sebaiknya **Yes**. Bila **No**, pengunjung
 ponsel dialihkan ke tema `lightweight`.
 
 ## 2. Buku tamu dengan pindai kartu
 
-Alamat kiosk: `index.php?p=visitor` (bisa ditambah `&room=KODE`).
+Alamat kiosk: `index.php?p=visitor` (bisa ditambah `&room=KODE`; nama ruang
+tampil di pojok layar bila kodenya terdaftar).
+
+### Memasang kiosk per ruang
+
+Bila ada ruang di **Daftar Terkendali → Ruang Pengunjung**, membuka
+`index.php?p=visitor` tanpa `room` menampilkan **halaman pilih ruang**:
+
+1. Pilih tampilan kiosk (`split`, `center`, `camera`).
+2. Klik ruangnya. Kiosk langsung terbuka di
+   `index.php?p=visitor&room=KODE&layout=...`.
+
+Bila *Ingat pilihan di perangkat ini* (footer, bawaan dicentang) aktif, pilihan
+disimpan di peramban perangkat itu (`localStorage`, kunci `bk_kiosk_device`).
+Lain kali `index.php?p=visitor` dibuka di perangkat yang sama, kiosk langsung
+terbuka di ruang tersebut, jadi cukup simpan `index.php?p=visitor` sebagai
+halaman awal peramban kiosk. *Lanjut tanpa ruang* membuka kiosk tanpa kode
+ruang (`&noroom=1`).
+
+- Kode ruang yang tidak terdaftar (`&room=XYZ`) membuka halaman pilih ruang
+  dengan peringatan, tidak lagi kiosk yang gagal mencatat.
+- `index.php?p=visitor&pick=1` selalu menampilkan halaman pilih ruang
+  (mengabaikan pilihan tersimpan).
+- Tanpa ruang terdaftar sama sekali, kiosk terbuka langsung seperti sebelumnya.
+- Halaman ini tidak butuh login admin; daftar nama dan kode ruang ikut terlihat
+  oleh siapa pun yang bisa membuka buku tamu (dibatasi *Allowed Counter IP*).
+
+### Pengaturan perangkat di kiosk
+
+Tombol roda gigi kecil di pojok kanan bawah kiosk membuka *Pengaturan
+perangkat*. Tombol ini harus **ditahan 2 detik** (mouse, sentuh, atau
+Enter/Spasi ditahan) agar pengunjung tidak mengubahnya tanpa sengaja; klik
+singkat hanya menampilkan petunjuk. Di dialognya:
+
+- **Ganti ruang**: kembali ke halaman pilih ruang.
+- **Tampilan**: pilih `split`/`center`/`camera`, lalu *Simpan & muat ulang*.
+  Pilihan disimpan untuk perangkat itu saja.
+
+Ini perlindungan ringan, bukan kunci: siapa pun yang tahu caranya bisa membuka
+dialog. Perangkat kiosk sebaiknya tetap memakai mode kiosk peramban.
+
+Ada tiga tata letak. Pilih bawaan di Kustomisasi tema (*Buku tamu: tata
+letak*), atau timpa per perangkat dengan parameter `layout`, mis. layar
+kamera di pintu masuk dan layar biasa di meja sirkulasi:
+
+| `layout` | Tampilan | Cocok untuk |
+|---|---|---|
+| `split` (bawaan) | Panel pindai terang di kiri, sapaan gelap di kanan | Monitor lebar dengan pemindai USB |
+| `center` | Satu panel di tengah, hasil di atas form | Tablet tegak, layar kecil |
+| `camera` | Kamera utama gelap, petunjuk 3 langkah di kanan; kamera langsung menyala | Webcam / tablet tanpa pemindai USB (butuh HTTPS) |
+
+Contoh: `index.php?p=visitor&room=R2&layout=camera`. Nilai lain diabaikan.
+Layout `camera` selalu memuat pembaca kamera; kolom ID untuk pemindai USB
+tetap ada di bawah kamera.
 
 - **Pemindai USB (barcode atau QR)**: siap pakai. Kolom ID selalu fokus;
   pemindai mengetik nomor anggota lalu Enter.

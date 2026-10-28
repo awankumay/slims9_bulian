@@ -8,22 +8,17 @@
 ?>
 
 <div class="result-search pb-5">
-    <section id="section1 container-fluid">
-        <header class="c-header bk-header">
-                      <?php
-          // ----------------------------------------------------------------------
-          // include navbar part
-          // ----------------------------------------------------------------------
-          include '_navbar.php'; ?>
-        </header>
+    <?php if ($_GET['p'] !== 'show_detail') : ?>
+    <section class="bk-searchbar">
       <?php
       // ------------------------------------------------------------------------
-      // include search form part
+      // include search form part (the detail page goes straight to the record)
       // ------------------------------------------------------------------------
       include '_search-form.php'; ?>
     </section>
+    <?php endif; ?>
 
-    <section id="bk-main" class="container mt-8 bk-page">
+    <section id="bk-main" class="container bk-page<?= $_GET['p'] === 'show_detail' ? ' bk-page--detail' : '' ?>">
       <?php
       if ($_GET['p'] !== 'show_detail') {
         echo '<h2 class="mb-4">' . $page_title . '</h2><hr>';

@@ -95,7 +95,7 @@ if (isset($_POST['counter'])) {
   }
   
   // send response
-  die(Json::stringify(['message' => $message, 'code' => $code, 'image' => $image,'new_token' => \Volnix\CSRF\CSRF::getToken(), 'status' => $visitor->getError()])->withHeader());
+  die(Json::stringify(['message' => $message, 'code' => $code, 'image' => $image,'new_token' => \Volnix\CSRF\CSRF::getToken(), 'status' => ENVIRONMENT === 'production' && $visitor->getError() ? 'error' : $visitor->getError()])->withHeader());
 }
 
 // include visitor form template

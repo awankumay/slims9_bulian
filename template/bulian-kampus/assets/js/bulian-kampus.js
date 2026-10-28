@@ -46,3 +46,64 @@
 
     syncButtons();
 })();
+
+/*
+ * bulian-kampus: kepala halaman lengket (sticky).
+ * Seluruh kepala halaman memakai position: sticky dengan top negatif sebesar
+ * tinggi strip + identitas, sehingga saat digulir hanya menu yang tertinggal.
+ * Tingginya diukur ulang bila ukuran teks, lebar layar, atau logo berubah.
+ */
+(function () {
+    var root = document.documentElement;
+    var header = document.getElementById('bk-header');
+    var nav = header && header.querySelector('.bk-nav');
+    if (!header || !nav) return;
+
+    var offset = 0;
+    var ticking = false;
+
+    function measure() {
+        offset = Math.max(0, header.offsetHeight - nav.offsetHeight);
+        root.style.setProperty('--bk-head-off', offset + 'px');
+        root.style.setProperty('--bk-nav-h', nav.offsetHeight + 'px');
+        update();
+    }
+
+    function update() {
+        ticking = false;
+        header.classList.toggle('is-stuck', window.pageYOffset > offset + 1);
+    }
+
+    window.addEventListener('scroll', function () {
+        if (!ticking) { ticking = true; window.requestAnimationFrame(update); }
+    }, { passive: true });
+
+    if (window.ResizeObserver) {
+        new ResizeObserver(measure).observe(header);
+    } else {
+        window.addEventListener('resize', measure);
+        window.addEventListener('load', measure);
+    }
+    root.classList.add('bk-js');
+    measure();
+})();
+
+/*
+ * bulian-kampus: area anggota, tandai tanggal harus kembali yang dekat (<= 3 hari)
+ * atau lewat pada tabel pinjaman saat ini.
+ */
+(function () {
+    var table = document.querySelector('.bk-member table.memberLoanList');
+    if (!table || !/[?&]p=member(&|$)/.test(location.search) || /[?&]sec=(?!current_loan)/.test(location.search)) return;
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    Array.prototype.forEach.call(table.rows, function (row) {
+        var cell = row.cells[row.cells.length - 1];
+        var m = cell && /^(\d{4})-(\d{2})-(\d{2})$/.exec(cell.textContent.trim());
+        if (!m) return;
+        var days = (new Date(+m[1], m[2] - 1, +m[3]) - today) / 86400000;
+        cell.classList.add('bk-due');
+        if (days < 0) cell.classList.add('bk-due--late');
+        else if (days <= 3) cell.classList.add('bk-due--soon');
+    });
+})();

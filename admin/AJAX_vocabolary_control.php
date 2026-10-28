@@ -40,7 +40,9 @@ $limit = 20;
 
 $table_name = trim($_POST['tableName'] ?? '');
 $table_fields = trim($_POST['tableFields'] ?? '');
-if (!ajaxLookupIsAllowed($table_name, explode(':', $table_fields))) {
+// the vocabulary list reads mst_voc_ctrl by the first column, so it must be topic_id
+if ($table_name !== 'mst_topic' || explode(':', $table_fields)[0] !== 'topic_id'
+    || !ajaxLookupIsAllowed($table_name, explode(':', $table_fields))) {
 	exit('<option value="0">' . __('Invalid table name format') . '</option>');
 }
 
@@ -116,7 +118,7 @@ if (isset($_GET['format'])) {
 			$li = '';
 			$scope = '';
 
-			$voc_q = $dbs->query('SELECT rt_id, related_topic_id, scope FROM mst_voc_ctrl WHERE topic_id=' . $row[0]);
+			$voc_q = $dbs->query('SELECT rt_id, related_topic_id, scope FROM mst_voc_ctrl WHERE topic_id=' . (int)$row[0]);
 			while ($voc_d = $voc_q->fetch_row()) {
 				if (is_null($voc_d[2])) {
 					$topic_q = $dbs->query('SELECT topic, topic_type FROM mst_topic WHERE topic_id=' . $voc_d[1]);

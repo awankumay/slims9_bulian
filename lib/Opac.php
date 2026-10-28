@@ -347,7 +347,9 @@ class Opac
                 ->parseToTemplate(); // then parse to template
             
         } catch (Exception $e) {
-            echo $this->error(isDev() ? $e->getMessage() : 'something wrong.');
+            // path tidak dikenal: tampilkan halaman 404 di dalam tema OPAC
+            if (http_response_code() === 404) echo $this->notFound();
+            else echo $this->error(isDev() ? $e->getMessage() : 'something wrong.');
             $this->parseToTemplate();
         }
     }
@@ -375,6 +377,45 @@ class Opac
         }
 
         return $this;
+    }
+
+    /**
+     * Konten 404 untuk path OPAC (?p=...) yang tidak ditemukan
+     *
+     * @return string
+     */
+    protected function notFound()
+    {
+        // buang keluaran parsial dari path yang gagal
+        if (ob_get_level()) ob_clean();
+
+        $this->toJson(['status' => false, 'message' => 'Not found']);
+
+        $this->definedVariable['metadata'] = '<meta name="robots" content="noindex, nofollow">';
+
+        $home = htmlspecialchars(SWB, ENT_QUOTES, 'UTF-8');
+        $path = htmlspecialchars($this->path, ENT_QUOTES, 'UTF-8');
+        // teks Indonesia untuk OPAC berbahasa Indonesia bila belum ada terjemahan
+        $isId = strpos($this->sysconf['default_lang'] ?? '', 'id') === 0;
+        $t = function ($en, $id) use ($isId) {
+            $tr = __($en);
+            return htmlspecialchars($tr !== $en || !$isId ? $tr : $id, ENT_QUOTES, 'UTF-8');
+        };
+        $title = $t('Page not found', 'Halaman tidak ditemukan');
+        $message = $t('The page you are looking for is not available. The link may be mistyped, moved, or removed.', 'Halaman yang Anda cari tidak tersedia. Mungkin tautannya salah ketik, sudah dipindahkan, atau sudah dihapus.');
+        $browse = $t('Browse collection', 'Lihat koleksi');
+        $backHome = $t('Back to home', 'Kembali ke beranda');
+        $this->definedVariable['page_title'] = html_entity_decode($title);
+
+        return <<<HTML
+<section class="slims-notfound" style="max-width:640px;margin:32px auto 48px;padding:0 16px;text-align:center">
+  <p style="font-size:64px;font-weight:800;line-height:1;margin:0 0 16px;color:var(--bk-primary,#0067B8)">404</p>
+  <p class="text-muted" style="margin:0 0 8px">{$message}</p>
+  <p class="text-muted small" style="margin:0 0 24px"><code>?p={$path}</code></p>
+  <a href="{$home}" class="btn btn-primary">{$backHome}</a>
+  <a href="{$home}index.php?keywords=&amp;search=search" class="btn btn-outline-secondary">{$browse}</a>
+</section>
+HTML;
     }
 
     protected function error(string $message)

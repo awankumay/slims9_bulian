@@ -44,6 +44,14 @@ function bk_assets($path = '')
   return CURRENT_TEMPLATE_DIR . 'assets/' . $path;
 }
 
+// theme asset URL with a version from the file's change time, so browsers fetch
+// the new CSS/JS right after a deploy (v() only changes with the SLiMS version)
+function bk_assets_v($path)
+{
+  $mtime = @filemtime(__DIR__ . '/assets/' . $path);
+  return bk_assets($path) . '?v=' . ($mtime ? base_convert((string)$mtime, 10, 36) : substr(md5(SENAYAN_VERSION_TAG), 0, 5));
+}
+
 // read a theme option and make it safe to print as text
 function bk_opt($key, $default = '')
 {
@@ -51,14 +59,6 @@ function bk_opt($key, $default = '')
   $value = $sysconf['template'][$key] ?? $default;
   if (!is_string($value)) return $value;
   return htmlspecialchars(stripslashes(trim($value)), ENT_QUOTES, 'UTF-8');
-}
-
-// read a theme option meant to be printed as HTML (already filtered with
-// allowable_tags when the setting is saved)
-function bk_html($key, $default = '')
-{
-  global $sysconf;
-  return stripslashes((string)($sysconf['template'][$key] ?? $default));
 }
 
 // only accept http(s), relative or anchor links coming from theme options
@@ -84,6 +84,43 @@ function bk_lang()
 function bk_t($id, $en)
 {
   return strpos(bk_lang(), 'id') === 0 ? $id : $en;
+}
+
+// up to two initials for an avatar, e.g. "Rina Wulandari" -> "RW"
+function bk_initials($name)
+{
+  $parts = preg_split('/\s+/u', trim(strip_tags((string)$name)), -1, PREG_SPLIT_NO_EMPTY);
+  $out = '';
+  foreach (array_slice($parts, 0, 2) as $p) $out .= mb_strtoupper(mb_substr($p, 0, 1));
+  return htmlspecialchars($out, ENT_QUOTES, 'UTF-8');
+}
+
+// newest titles for the home page, with their first author (same rule as api/biblio/latest)
+function bk_latest_biblio($dbs, $limit = 6)
+{
+  $limit = max(1, min(24, (int)$limit));
+  $sql = "SELECT b.biblio_id, b.title, b.image,
+            (SELECT a.author_name FROM biblio_author AS ba JOIN mst_author AS a ON a.author_id = ba.author_id
+              WHERE ba.biblio_id = b.biblio_id ORDER BY ba.level, a.author_name LIMIT 1) AS author
+          FROM biblio AS b WHERE b.opac_hide < 1
+          ORDER BY b.last_update DESC LIMIT {$limit}";
+  $rows = [];
+  $q = $dbs->query($sql);
+  while ($q && ($r = $q->fetch_assoc())) $rows[] = $r;
+  return $rows;
+}
+
+// "Senin–Kamis 07.30–16.00 · Jumat 07.30–16.30 WIB" -> [[day, time], ...] (escaped);
+// segments are split on "·", ";" or new lines, empty when the text has another shape
+function bk_hours_rows($text)
+{
+  $rows = [];
+  foreach (preg_split('/\s*(?:·|;|\r?\n)\s*/u', trim(stripslashes((string)$text))) as $seg) {
+    if ($seg === '') continue;
+    if (!preg_match('/^(.*?\D)\s+((?:\d|tutup|libur|closed).*)$/iu', $seg, $m)) return [];
+    $rows[] = [htmlspecialchars($m[1], ENT_QUOTES, 'UTF-8'), htmlspecialchars($m[2], ENT_QUOTES, 'UTF-8')];
+  }
+  return $rows;
 }
 
 // only accept #RRGGBB colours

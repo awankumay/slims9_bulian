@@ -15,7 +15,9 @@ RUN apt-get update \
     && docker-php-ext-install -j$(nproc) iconv \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-enable gd
+    && docker-php-ext-enable gd \
+    && docker-php-ext-install exif \
+    && docker-php-ext-enable exif
 RUN rm -rf /var/lib/apt/lists/*
 
 RUN a2enmod rewrite headers remoteip
@@ -31,6 +33,10 @@ WORKDIR /var/www/html
 COPY . /var/www/html
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
+# Member card templates are PHP loaded with require_once from the files volume.
+# Keep a root-owned copy so entrypoint.sh can refresh the volume on every start.
+RUN cp -a /var/www/html/files/membercard /usr/src/slims-membercard
 
 RUN chown -R www-data:www-data /var/www/html/files
 RUN chown -R www-data:www-data /var/www/html/images

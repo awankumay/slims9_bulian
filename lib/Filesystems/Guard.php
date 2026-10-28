@@ -14,6 +14,8 @@ use League\MimeTypeDetection\ExtensionMimeTypeDetector;
 
 trait Guard
 {
+    private $sanitizedWithGD = false;
+
     /**
      * Check if mime is allowed or not
      *
@@ -73,7 +75,14 @@ trait Guard
     public function isImageFile()
     {
         if (!$this->uploadStatus) return false;
-        $this->uploadStatus = \exif_imagetype($this->path.$this->uploadedFile);
+        $file = $this->path . $this->uploadedFile;
+        // exif is an optional PHP extension (the official Docker PHP image does not
+        // ship it), so fall back to getimagesize() from ext/standard.
+        if (function_exists('exif_imagetype')) {
+            $this->uploadStatus = (bool)@\exif_imagetype($file);
+        } else {
+            $this->uploadStatus = @getimagesize($file) !== false;
+        }
         if (!$this->uploadStatus) {
             $this->error =  __('Wrong image filetype.');
         }
@@ -88,6 +97,8 @@ trait Guard
     public function sanitizeImageWithGD()
     {
         if (!$this->uploadStatus) return false;
+        // cleanExifInfo() and sanitizeImageWithGD() share this pass; re-encode once
+        if ($this->sanitizedWithGD) return $this->uploadStatus;
 
         $file_path = $this->path . $this->uploadedFile;
         $mime = mime_content_type($file_path);
@@ -122,6 +133,12 @@ trait Guard
                 }
                 break;
             default:
+                // ICO, WebP and other image types are kept as they are, anything
+                // that is not an image at all is refused
+                if (strpos((string)$mime, 'image/') !== 0) {
+                    $this->uploadStatus = false;
+                    $this->error = __('Wrong image filetype.');
+                }
                 return $this->uploadStatus;
         }
 
@@ -135,6 +152,7 @@ trait Guard
             imagedestroy($img);
         }
 
+        $this->sanitizedWithGD = true;
         return $this->uploadStatus;
     }
 

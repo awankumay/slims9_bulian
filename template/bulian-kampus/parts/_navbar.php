@@ -40,6 +40,7 @@ if ($bk_ministry_logo === '' && trim((string)($sysconf['template']['bk_ministry_
   $bk_ministry_logo = SWB . ltrim($sysconf['template']['bk_ministry_logo'], '/');
 }
 ?>
+<header id="bk-header" class="bk-header">
 <div class="bk-topstrip">
     <div class="bk-wrap bk-topstrip__in">
         <span class="bk-official"><span class="bk-flag" aria-hidden="true"><i></i><i></i></span><?= bk_t('Laman resmi', 'Official site of') ?> <?= bk_opt('bk_parent_name') ?> · <?= bk_opt('bk_ministry_name') ?></span>
@@ -81,6 +82,7 @@ if ($bk_ministry_logo === '' && trim((string)($sysconf['template']['bk_ministry_
         <img class="bk-ministry" src="<?= $bk_ministry_logo ?>" alt="Logo <?= bk_opt('bk_ministry_name') ?>">
         <?php endif; ?>
     </div>
+</div>
 
     <nav class="bk-nav navbar navbar-expand-lg navbar-dark" aria-label="<?= bk_t('Menu utama', 'Main menu') ?>">
         <div class="bk-wrap bk-nav__in">
@@ -104,16 +106,17 @@ if ($bk_ministry_logo === '' && trim((string)($sysconf['template']['bk_ministry_
                     <li class="nav-item<?= $bk_page === 'member' ? ' active' : '' ?>">
                         <a class="nav-link" href="index.php?p=member&sec=title_basket" aria-label="<?= __('Basket') ?>">
                             <i class="fas fa-shopping-basket" aria-hidden="true"></i>
-                            <sup id="count-basket" class="badge badge-warning"><?= count($_SESSION['m_mark_biblio'] ?? []) ?></sup>
+                            <span id="count-basket" class="badge badge-warning"><?= count($_SESSION['m_mark_biblio'] ?? []) ?></span>
                         </a>
                     </li>
                     <li class="nav-item dropdown<?= $bk_page === 'member' ? ' active' : '' ?>">
                         <a class="nav-link dropdown-toggle" href="#" id="bkMemberMenu" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <img class="bk-avatar" src="<?= $member_image_path ?>" alt=""> <?= htmlspecialchars($_SESSION['m_name'] ?? '', ENT_QUOTES) ?>
+                            <span class="bk-avatar" aria-hidden="true"><?= bk_initials($_SESSION['m_name'] ?? '') ?></span> <?= htmlspecialchars($_SESSION['m_name'] ?? '', ENT_QUOTES) ?>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="bkMemberMenu">
                             <a class="dropdown-item" href="index.php?p=member"><i class="fas fa-user-circle mr-3"></i> <?= __('Profile') ?></a>
                             <a class="dropdown-item" href="index.php?p=member&sec=bookmark"><i class="fas fa-bookmark mr-3"></i> <?= __('Bookmark') ?></a>
+                            <a class="dropdown-item" href="index.php?p=member&sec=membercard" target="_blank" rel="noopener"><i class="fas fa-address-card mr-3"></i> <?= __('View Library Card') ?></a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="index.php?p=member&logout=1"><i class="fas fa-sign-out-alt mr-3"></i> <?= __('Logout') ?></a>
                         </div>
@@ -127,4 +130,4 @@ if ($bk_ministry_logo === '' && trim((string)($sysconf['template']['bk_ministry_
             </div>
         </div>
     </nav>
-</div>
+</header>

@@ -73,7 +73,7 @@ $request_uri = urlencode(strip_tags(urldecode($_SERVER['REQUEST_URI'])));
     <!-- // my custom style -->
     <link rel="stylesheet" href="<?php echo assets('css/style.css?v=' . date('Ymd-his')); ?>">
     <!-- // bulian-kampus -->
-    <link rel="stylesheet" href="<?php echo bk_assets(v('css/bulian-kampus.css')); ?>">
+    <link rel="stylesheet" href="<?php echo bk_assets_v('css/bulian-kampus.css'); ?>">
     <style>
         :root {
             --bk-primary: <?= bk_color('bk_primary', '#0067B8') ?>;
@@ -96,7 +96,7 @@ $request_uri = urlencode(strip_tags(urldecode($_SERVER['REQUEST_URI'])));
     $icon = SWB . 'webicon.ico';
     if (isset($sysconf['webicon']) && !empty($sysconf['webicon']) && $imagesDisk->isExists($path = 'default/' . $sysconf['webicon']))
     {
-        $icon = SWB . 'lib/minigalnano/createthumb.php?filename=images/' . $path . '&width=130';
+        $icon = SWB . 'images/' . $path . '?v=' . ($sysconf['static_file_version'] ?? '');
     }
     ?>
     <link rel="shortcut icon" href="<?= $icon ?>" type="image/x-icon"/>

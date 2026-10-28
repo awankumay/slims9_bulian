@@ -15,7 +15,14 @@
     var title = $('bk-result-title');
     var text = $('bk-result-text');
     var guest = $('bk-guest');
-    var idle = { photo: photo.getAttribute('src'), title: title.textContent, text: text.textContent };
+    var device = $('bk-device');
+    var deviceBtn = $('bk-device-btn');
+    // tombol pengaturan boleh memegang fokus sebentar (untuk ditahan lewat keyboard)
+    var deviceKeep = 0;
+    var stateText = state.querySelector('.bk-kiosk__state-text');
+    var idle = { title: title.textContent, text: text.textContent, state: stateText.textContent };
+    // foto bawaan SLiMS untuk anggota tanpa foto / tamu: tampilkan ikon saja
+    var noPhoto = /^(|person\.png|non_member\.png|photo\.png|avatar\.jpg)$/;
 
     var busy = false;
     var last = { code: '', at: 0, kind: '' };
@@ -47,21 +54,27 @@
 
     function setState(kind, message) {
         state.setAttribute('data-kind', kind);
-        state.lastChild.textContent = ' ' + message;
+        stateText.textContent = message;
+    }
+
+    function setPhoto(image) {
+        photo.hidden = !image;
+        if (image) photo.setAttribute('src', image);
+        else photo.removeAttribute('src');
     }
 
     function show(kind, heading, message, image) {
         card.setAttribute('data-state', kind);
         title.textContent = heading;
         text.textContent = message;
-        if (image) photo.setAttribute('src', image);
+        setPhoto(image);
         clearTimeout(resetTimer);
         resetTimer = setTimeout(function () {
             card.setAttribute('data-state', 'idle');
             title.textContent = idle.title;
             text.textContent = idle.text;
-            photo.setAttribute('src', idle.photo);
-            setState('ready', T.ready);
+            setPhoto(null);
+            setState('ready', scanner && !conf.autoCamera ? T.camActive : idle.state);
         }, 6000);
     }
 
@@ -77,6 +90,8 @@
 
     function focusInput() {
         if (guest && guest.open) return;
+        if (device && device.open) return;
+        if (deviceBtn && document.activeElement === deviceBtn && (Date.now() < deviceKeep || deviceBtn.classList.contains('is-holding'))) return;
         if (document.activeElement !== input) input.focus({ preventScroll: true });
     }
 
@@ -115,9 +130,17 @@
                     if (guest) { guest.open = true; $('bk-guest-name').value = memberId; $('bk-guest-inst').focus(); }
                     message = T.guest;
                 }
-                var image = res.image ? conf.imageBase + encodeURIComponent(res.image).replace(/%2F/g, '/') : null;
+                var image = res.image && !noPhoto.test(res.image) ? conf.imageBase + encodeURIComponent(res.image).replace(/%2F/g, '/') : null;
                 show(kind, kind === 'ok' ? T.welcome : T.attention, message, image);
-                setState(kind === 'ok' ? 'ok' : 'warn', message);
+                // baris status di bawah kolom ID: ringkas + nomor yang dipindai
+                var tag = institution ? '' : ' · ' + memberId;
+                var short = {
+                    checked_in: T.recorded + tag,
+                    already_checked_in: T.already + tag,
+                    expired: T.expired + tag,
+                    need_institution: T.unknown
+                }[needInstitution && !institution ? 'need_institution' : res.code] || message;
+                setState(kind === 'ok' ? 'ok' : 'warn', short);
                 if (last.code === memberId) last.kind = kind;
                 if (kind === 'ok') speak(message);
             })
@@ -173,48 +196,129 @@
     // pemindai USB mengetik ke elemen yang sedang fokus; jaga fokus di kolom ID
     input.addEventListener('blur', function () { setTimeout(focusInput, 400); });
     document.addEventListener('click', function (ev) {
-        if (!ev.target.closest('#bk-guest, #bk-cam-toggle, a, button, input, summary')) focusInput();
+        if (!ev.target.closest('#bk-guest, #bk-cam-toggle, #bk-device, a, button, input, summary')) focusInput();
     });
 
     // ---------------------------------------------------------------- kamera
 
     var camBtn = $('bk-cam-toggle');
-    var camView = $('bk-cam-view');
+    var camWrap = $('bk-cam-wrap');
+    var camNote = $('bk-cam-note');
     var scanner = null;
+
+    function camLabel(on) {
+        if (!camBtn) return;
+        camBtn.querySelector('span').textContent = on ? T.camOn : T.camOff;
+        camBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+
+    function camProblem(message) {
+        if (conf.autoCamera) {
+            // layout kamera: kotak kamera tetap tampil, pesan di dalamnya
+            if (camNote) camNote.textContent = message;
+            camWrap.setAttribute('data-off', '1');
+            return;
+        }
+        camWrap.hidden = true;
+        show('warn', T.attention, message, null);
+    }
 
     function stopCamera() {
         if (!scanner) return Promise.resolve();
         var s = scanner;
         scanner = null;
         return s.stop().catch(function () {}).then(function () {
-            camView.hidden = true;
-            camBtn.textContent = T.camOff;
+            camWrap.hidden = true;
+            camLabel(false);
+            setState('ready', idle.state);
         });
     }
 
-    if (camBtn) {
+    function startCamera() {
+        if (!window.isSecureContext) { camProblem(T.camInsecure); return; }
+        if (typeof Html5Qrcode === 'undefined') { camProblem(T.camFail); return; }
+        camWrap.hidden = false;
+        var F = Html5QrcodeSupportedFormats;
+        scanner = new Html5Qrcode('bk-cam-view', {
+            formatsToSupport: [F.QR_CODE, F.CODE_128, F.CODE_39, F.EAN_13],
+            verbose: false
+        });
+        // tanpa qrbox: seluruh gambar dipindai, bingkai kuning hanya panduan
+        scanner.start(
+            { facingMode: 'user' },
+            { fps: 8 },
+            function (decoded) { if (!busy) submitCode(decoded); },
+            function () {}
+        ).then(function () {
+            camLabel(true);
+            if (!conf.autoCamera) setState('ok', T.camActive);
+        }).catch(function () {
+            scanner = null;
+            camProblem(T.camFail);
+        });
+    }
+
+    if (camBtn && camWrap) {
         camBtn.addEventListener('click', function () {
-            if (scanner) { stopCamera(); return; }
-            if (!window.isSecureContext) { show('warn', T.attention, T.camInsecure, null); return; }
-            if (typeof Html5Qrcode === 'undefined') { show('error', T.attention, T.camFail, null); return; }
-            camView.hidden = false;
-            var F = Html5QrcodeSupportedFormats;
-            scanner = new Html5Qrcode('bk-cam-view', {
-                formatsToSupport: [F.QR_CODE, F.CODE_128, F.CODE_39, F.EAN_13],
-                verbose: false
-            });
-            scanner.start(
-                { facingMode: 'user' },
-                { fps: 8, qrbox: function (w, h) { return { width: Math.floor(w * 0.85), height: Math.floor(h * 0.85) }; } },
-                function (decoded) { if (!busy) submitCode(decoded); },
-                function () {}
-            ).then(function () {
-                camBtn.textContent = T.camOn;
-            }).catch(function () {
-                scanner = null;
-                camView.hidden = true;
-                show('error', T.attention, T.camFail, null);
-            });
+            if (scanner) stopCamera();
+            else startCamera();
+        });
+    }
+    if (conf.autoCamera && camWrap) startCamera();
+
+    // ------------------------------------------------- pengaturan perangkat
+
+    // tombol harus ditahan 2 detik (mouse, sentuh, atau Enter/Spasi ditahan)
+    var deviceHint = $('bk-device-hint');
+    if (deviceBtn && device && device.showModal) {
+        var holdTimer = null;
+        var hintTimer = null;
+        var opened = false;
+        var hold = function (ev) {
+            if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+            ev.preventDefault();
+            if (holdTimer) return;
+            opened = false;
+            deviceBtn.classList.add('is-holding');
+            holdTimer = setTimeout(function () {
+                holdTimer = null;
+                opened = true;
+                deviceBtn.classList.remove('is-holding');
+                deviceHint.textContent = '';
+                device.showModal();
+            }, 2000);
+        };
+        var release = function () {
+            if (!holdTimer) return;
+            clearTimeout(holdTimer);
+            holdTimer = null;
+            deviceBtn.classList.remove('is-holding');
+            if (opened) return;
+            setTimeout(focusInput, 3000);
+            deviceHint.textContent = T.holdHint;
+            clearTimeout(hintTimer);
+            hintTimer = setTimeout(function () { deviceHint.textContent = ''; }, 3000);
+        };
+        deviceBtn.addEventListener('pointerdown', hold);
+        deviceBtn.addEventListener('keydown', hold);
+        ['pointerup', 'pointerleave', 'pointercancel', 'keyup', 'blur'].forEach(function (type) {
+            deviceBtn.addEventListener(type, release);
+        });
+        deviceBtn.addEventListener('focus', function () {
+            deviceKeep = Date.now() + 4000;
+            setTimeout(focusInput, 4100);
+        });
+        deviceBtn.addEventListener('blur', function () { setTimeout(focusInput, 400); });
+        deviceBtn.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
+
+        device.addEventListener('close', function () {
+            if (device.returnValue !== 'save') { focusInput(); return; }
+            var picked = device.querySelector('input[name="bk-device-layout"]:checked');
+            var layout = picked ? picked.value : conf.layout;
+            try { localStorage.setItem(conf.storeKey, JSON.stringify({ room: conf.room, layout: layout })); } catch (e) {}
+            location.href = 'index.php?p=visitor' +
+                (conf.room ? '&room=' + encodeURIComponent(conf.room) : (conf.hasRooms ? '&noroom=1' : '')) +
+                '&layout=' + layout;
         });
     }
 
@@ -230,6 +334,5 @@
     tick();
     setInterval(tick, 30000);
 
-    setState('ready', T.ready);
     focusInput();
 })();

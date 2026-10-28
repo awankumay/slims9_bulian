@@ -8,7 +8,7 @@ server lokal perpustakaan. Sudah diuji di Ubuntu 24.04 dengan Apache 2.4, PHP
 
 | Komponen | Versi | Catatan |
 |---|---|---|
-| PHP | 8.3.x atau 8.4.x | Ekstensi: `intl gd gettext mbstring zip mysqli pdo_mysql curl xml` |
+| PHP | 8.3.x atau 8.4.x | Ekstensi: `intl gd exif fileinfo gettext mbstring zip mysqli pdo_mysql curl xml` |
 | Web server | Apache 2.4 (mod_php/FPM) atau Nginx + PHP-FPM | `mod_rewrite` dan `mod_headers` aktif untuk Apache |
 | Database | MariaDB 10.5+ atau MySQL 8 | |
 | Composer | 2.x | Untuk memasang `vendor/` jika memakai source, bukan paket rilis |
@@ -88,6 +88,23 @@ curl -sI http://127.0.0.1/ | grep -i "server\|x-content-type\|x-powered"
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/config/database.php   # harus 403
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/install/              # harus 404
 ```
+
+### Halaman error
+
+`errorpage.php` menampilkan halaman error bertema (404, 403, 500, dll.)
+pengganti teks polos web server. Tidak butuh database, jadi tetap tampil saat
+aplikasi bermasalah.
+
+- **Apache:** sudah aktif lewat `ErrorDocument` di `.htaccess` (perlu
+  `AllowOverride All`). Jika SLiMS dipasang di subfolder, ganti
+  `/errorpage.php` menjadi `/<subfolder>/errorpage.php` di `.htaccess`.
+- **Nginx:** pakai contoh `docs/deployment/nginx-slims.conf` (berisi
+  `error_page` dan aturan hardening setara Docker). Jangan aktifkan
+  `fastcgi_intercept_errors`, supaya 404 OPAC dan JSON API dari SLiMS tetap
+  tampil apa adanya.
+
+Cek: `curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/tidak-ada` harus
+`404` dan halamannya berjudul "Halaman tidak ditemukan".
 
 ## 5. HTTPS
 
