@@ -269,7 +269,42 @@ class Opac
     public function setCsp(array $additionalCsp = [])
     {
         $defaultCsp = config('csp', []);
-        if (count($defaultCsp)) $this->setHeader('Content-Security-Policy', implode(';', array_merge($defaultCsp, $additionalCsp)));
+        if (!count($defaultCsp)) return;
+
+        // external images picked in the active theme's image fields (e.g. a logo URL)
+        $themeImages = $this->getThemeImageOrigins();
+        if ($themeImages) $additionalCsp[] = 'img-src ' . implode(' ', $themeImages);
+
+        // a repeated directive is ignored by browsers, so append its sources instead
+        $directives = [];
+        foreach (array_merge($defaultCsp, $additionalCsp) as $rule) {
+            $parts = preg_split('/\s+/', trim($rule), 2);
+            $name = strtolower($parts[0]);
+            if (isset($directives[$name])) {
+                if (isset($parts[1]) && stripos($directives[$name], "'none'") === false) $directives[$name] .= ' ' . $parts[1];
+            } else {
+                $directives[$name] = trim($rule);
+            }
+        }
+        $this->setHeader('Content-Security-Policy', implode(';', $directives));
+    }
+
+    /**
+     * Origins of external images set in the active theme's "image" fields
+     *
+     * @return array
+     */
+    public function getThemeImageOrigins()
+    {
+        $template = $this->sysconf['template'] ?? [];
+        $origins = [];
+        foreach ($template['option'][$template['theme'] ?? ''] ?? [] as $field) {
+            if (($field['type'] ?? '') !== 'image') continue;
+            $value = trim((string)($template[$field['dbfield']] ?? ''));
+            // host and port only, so the value cannot inject other CSP tokens
+            if (preg_match('@^(https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?)(/|$)@i', $value, $m)) $origins[] = strtolower($m[1]);
+        }
+        return array_values(array_unique($origins));
     }
 
     /**

@@ -14,7 +14,7 @@ Aktifkan lewat **Sistem → Tema → bulian-kampus → Aktifkan**, lalu **Kustom
 | Opsi | Keterangan |
 |---|---|
 | Nama perguruan tinggi, nama kementerian | Tampil di strip "Laman resmi", kepala halaman, dan footer. Nama perpustakaan diambil dari Sistem → Pengaturan. |
-| Logo kementerian | Path relatif (mis. `images/default/logo-kementerian.png`) atau URL `https://`. Logo kampus memakai logo perpustakaan di Sistem → Pengaturan. Logo kementerian tampil di **kanan** logo kampus. |
+| Logo kementerian | Unggah file gambar (JPG/PNG/GIF, maks. sesuai `max_image_upload`), atau isi URL `https://` / path relatif (mis. `images/default/logo-kementerian.png`). File unggahan disimpan di `images/default/` dan menggantikan isian. Domain URL eksternal otomatis diizinkan di CSP `img-src`. Logo kampus memakai logo perpustakaan di Sistem → Pengaturan. Logo kementerian tampil di **kanan** logo kampus. |
 | Warna utama, warna aksen | Pilihan warna yang aman kontras. |
 | Jam layanan, maklumat pelayanan, alamat | Teks beranda dan footer. |
 | Tautan standar pelayanan, SKM, hasil SKM, SP4N-LAPOR!, PPID, kebijakan privasi | Kosong = tidak ditampilkan. |
@@ -33,8 +33,33 @@ JavaScript kepala halaman kembali biasa (tidak lengket).
 
 Beranda menampilkan **Koleksi terbaru** langsung dari basis data (judul,
 sampul, pengarang pertama; jumlah dari opsi lama `classic_new_collection_item`,
-bawaan 6). Area anggota menampilkan kartu ringkas data keanggotaan di atas tab
-bawaan SLiMS; tanggal harus kembali yang tinggal 3 hari atau lewat diberi warna.
+bawaan 6).
+
+### Area anggota
+
+- **Menu anggota di navbar** selalu terlihat (juga di ponsel): tombol
+  **Keranjang** dengan jumlah judul dan panel pratinjau (layar lebar; di ponsel
+  langsung membuka keranjang), dan tombol profil (avatar + nama depan) berisi
+  nama lengkap, ID, status keanggotaan, Pinjaman, Judul tertandai, Keranjang,
+  Akun & kata sandi, Kartu anggota, Keluar. Di ponsel menu profil muncul dari
+  bawah layar.
+- **Ringkasan anggota** di atas tab (nama, ID, tipe, institusi, status) dan
+  pemberitahuan bila keanggotaan berakhir dalam 30 hari, sudah kedaluwarsa, atau
+  masih menunggu persetujuan. Tab memakai jumlah (pinjaman, tertandai, keranjang).
+- **Tab Keranjang** (`parts/member/_basket.php`): daftar judul dengan sampul,
+  pengarang, nomor panggil, dan ketersediaan; pilih semua, hapus terpilih, hapus
+  satu, kosongkan, dan kirim pesanan, dengan dialog konfirmasi. Tombol kirim
+  dikunci untuk anggota kedaluwarsa/menunggu atau tipe yang tidak boleh memesan.
+  Aksinya tetap diproses oleh `lib/contents/member.inc.php` (`basketRemove`,
+  `clear_biblio`, `sendReserve`) dengan token CSRF anggota, jadi aturan
+  pemesanan (`reserve_direct_database`, batas pemesanan) tidak berubah.
+- **Tab Akun saya** (`parts/member/_account.php`): kartu data keanggotaan dengan
+  sisa masa berlaku, dan form ubah kata sandi (label berbahasa Indonesia,
+  tombol lihat/sembunyikan, daftar syarat sesuai `password_policy_strong` dan
+  `password_policy_min_length`, cek pengulangan). Pesan hasil dari core
+  (berhasil/salah kata sandi, hasil pesanan lewat surel) tampil di atas tab.
+- Tab lain (pinjaman, tertandai, riwayat) tetap dari SLiMS; tanggal harus
+  kembali yang tinggal 3 hari atau lewat diberi warna.
 
 Opsi "Enable this theme for mobile?" sebaiknya **Yes**. Bila **No**, pengunjung
 ponsel dialihkan ke tema `lightweight`.

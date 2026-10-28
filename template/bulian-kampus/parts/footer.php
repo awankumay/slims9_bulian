@@ -41,7 +41,7 @@
     </div>
     <div class="bk-wrap bk-footer__bottom">
         <span>&copy; <?= date('Y') ?> <?= $sysconf['library_name'] ?> · <?= bk_opt('bk_parent_name') ?></span>
-        <span><?= __('Powered by ') ?><a href="https://slims.web.id" target="_blank" rel="noopener">SLiMS</a></span>
+        <span><?= __('Powered by ') ?><a href="https://slims.web.id" target="_blank" rel="noopener">SLiMS</a><?php $bk_credit = bk_opt('bk_theme_credit', 'show'); if ($bk_credit !== 'hide') : ?> <span class="bk-credit<?= $bk_credit === 'subtle' ? ' bk-credit--subtle' : '' ?>">· <?= bk_t('Tema oleh', 'Theme by') ?> <a href="https://www.mitracoretech.id" target="_blank" rel="noopener">CV. Mitra Coretech</a></span><?php endif; ?></span>
     </div>
 </footer>
 

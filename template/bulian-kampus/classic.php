@@ -131,6 +131,82 @@ function bk_color($key, $default)
   return preg_match('/^#[0-9a-fA-F]{6}$/', $color) ? $color : $default;
 }
 
+// "2027-10-28" -> "28 Oktober 2027" ("28 Okt 2027" when $short), in the visitor's language
+function bk_date($ymd, $short = false)
+{
+  if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})/', (string)$ymd, $m)) return htmlspecialchars((string)$ymd, ENT_QUOTES, 'UTF-8');
+  $months = bk_t('Januari Februari Maret April Mei Juni Juli Agustus September Oktober November Desember',
+    'January February March April May June July August September October November December');
+  $name = explode(' ', $months)[(int)$m[2] - 1] ?? $m[2];
+  if ($short) $name = mb_substr($name, 0, 3);
+  return (int)$m[3] . ' ' . $name . ' ' . $m[1];
+}
+
+// membership state of the logged-in member for the member area:
+// key active|soon|expired|pending, days left, and how much of the period is left (0-100)
+function bk_member_status()
+{
+  $expire = (string)($_SESSION['m_expire_date'] ?? '');
+  $start = (string)($_SESSION['m_register_date'] ?? '');
+  $today = strtotime(date('Y-m-d'));
+  $end = strtotime($expire) ?: $today;
+  $begin = strtotime($start) ?: $end;
+  $days = (int)round(($end - $today) / 86400);
+  $span = max(1, $end - $begin);
+  $pct = max(0, min(100, (int)round(($end - $today) / $span * 100)));
+  if (!empty($_SESSION['m_membership_pending'])) $key = 'pending';
+  elseif (!empty($_SESSION['m_is_expired']) || $days < 0) $key = 'expired';
+  elseif ($days <= 30) $key = 'soon';
+  else $key = 'active';
+  $labels = [
+    'active' => bk_t('Aktif', 'Active'),
+    'soon' => bk_t('Segera berakhir', 'Expiring soon'),
+    'expired' => bk_t('Kedaluwarsa', 'Expired'),
+    'pending' => bk_t('Menunggu persetujuan', 'Pending'),
+  ];
+  return ['key' => $key, 'label' => $labels[$key], 'days' => $days, 'pct' => $key === 'expired' ? 0 : $pct,
+    'expire' => bk_date($expire), 'expire_short' => bk_date($expire, true)];
+}
+
+// loans on hand and bookmarked titles of the logged-in member, for the tab counters
+function bk_member_counts($dbs)
+{
+  $mid = $dbs->escape_string((string)($_SESSION['mid'] ?? ''));
+  $one = function ($sql) use ($dbs) {
+    $q = $dbs->query($sql);
+    return $q ? (int)($q->fetch_row()[0] ?? 0) : 0;
+  };
+  return [
+    'loans' => $one("SELECT COUNT(*) FROM loan WHERE member_id = '{$mid}' AND is_lent = 1 AND is_return = 0"),
+    'bookmark' => $one("SELECT COUNT(*) FROM biblio_mark WHERE member_id = '{$mid}'"),
+    'basket' => count($_SESSION['m_mark_biblio'] ?? []),
+  ];
+}
+
+// titles in the member's basket, in the order they were added, with first author,
+// call number and how many copies are on the shelf (copies minus open loans)
+function bk_basket_items($dbs)
+{
+  $ids = array_values(array_unique(array_filter(array_map('intval', array_values($_SESSION['m_mark_biblio'] ?? [])))));
+  if (!$ids) return [];
+  $in = implode(',', $ids);
+  $sql = "SELECT b.biblio_id, b.title, b.image, b.publish_year, b.call_number,
+            (SELECT a.author_name FROM biblio_author AS ba JOIN mst_author AS a ON a.author_id = ba.author_id
+              WHERE ba.biblio_id = b.biblio_id ORDER BY ba.level, a.author_name LIMIT 1) AS author,
+            (SELECT COUNT(*) FROM item AS i WHERE i.biblio_id = b.biblio_id) AS copies,
+            (SELECT COUNT(*) FROM loan AS l JOIN item AS i ON i.item_code = l.item_code
+              WHERE i.biblio_id = b.biblio_id AND l.is_lent = 1 AND l.is_return = 0) AS on_loan
+          FROM biblio AS b WHERE b.biblio_id IN ({$in})";
+  $rows = [];
+  $q = $dbs->query($sql);
+  while ($q && ($r = $q->fetch_assoc())) {
+    $r['available'] = max(0, (int)$r['copies'] - (int)$r['on_loan']);
+    $rows[array_search((int)$r['biblio_id'], $ids, true)] = $r;
+  }
+  ksort($rows);
+  return array_values($rows);
+}
+
 // ----------------------------------------------------------------------------
 // Get popular title by loan
 // ----------------------------------------------------------------------------
