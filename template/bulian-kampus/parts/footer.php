@@ -32,7 +32,7 @@
             <p class="bk-footer__h"><?= bk_t('Perpustakaan', 'Library') ?></p>
             <ul>
                 <li><a href="index.php?p=libinfo"><?= __('Information') ?></a></li>
-                <li><a href="index.php?p=services"><?= __('Services') ?></a></li>
+                <li><a href="index.php#bk-quick-title"><?= __('Services') ?></a></li>
                 <li><a href="index.php?p=librarian"><?= __('Librarian') ?></a></li>
                 <li><a href="index.php?p=member"><?= __('Member Area') ?></a></li>
                 <li><a href="https://onesearch.id" target="_blank" rel="noopener">Indonesia OneSearch</a></li>

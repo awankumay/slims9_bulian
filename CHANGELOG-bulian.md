@@ -12,7 +12,11 @@ Riwayat SLiMS upstream ada di `changes.txt`.
 - Tema kartu anggota baru `bulian-kartu` (CR80) dengan barcode Code128 di depan dan QR buku tamu di belakang, keduanya digambar sebagai SVG.
 - Panduan: `docs/fork/tema-kampus-dan-kartu.md`.
 
+- Tema `bulian-kampus` disesuaikan dengan mockup UI: kepala halaman lengket (hanya menu yang tetap terlihat saat digulir, bayangan tipis, jangkar tidak tertutup), tombol "Pencarian spesifik" dan tombol cari di kolom pencarian, koleksi terbaru dengan pengarang (dirender server), jam layanan berbentuk tabel, kartu hasil pencarian dan saringan baru, detail bibliografi dengan tabel ketersediaan, dan kartu profil di area anggota (tanggal kembali yang dekat/lewat diberi warna).
+- Buku tamu `bulian-kampus` punya tiga tata letak (`split`, `center`, `camera`) yang dipilih di Kustomisasi tema atau per perangkat dengan `index.php?p=visitor&layout=...`; layout `camera` menyalakan kamera otomatis. Nama ruang (`&room=`) tampil di layar, dan baris status menampilkan ringkasan (mis. "Tercatat · M0001").
+
 ### Perbaikan
+- Tema `bulian-kampus`: teks tombol Bootstrap (mis. "Lihat kartu anggota", "Keluar" di area anggota) tidak lagi biru di atas biru; tautan footer "Layanan" tidak lagi 404.
 - Tema `bulian-kampus`: tombol pilihan pencarian di beranda (Pengarang, Subjek, ISBN/ISSN, Pencarian Spesifik) tidak lagi berteks putih di atas putih.
 - Tambah/ubah anggota: pesan jelas untuk nomor anggota ganda, isian terlalu panjang, dan tanggal tidak valid (sebelumnya hanya "Database insert error."). Tanggal kedaluwarsa kosong saat "Auto Set" tidak dicentang kini dihitung dari periode jenis keanggotaan. Kolom form diberi batas panjang.
 - Setelan cetak kartu anggota dari data contoh `install/` (panjang string serialisasi salah) tidak lagi membuat halaman tema kartu HTTP 500; data contohnya juga diperbaiki.

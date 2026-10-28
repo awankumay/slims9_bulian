@@ -37,6 +37,7 @@ $sysconf['template']['bk_address'] = '[Alamat lengkap perpustakaan] · [Telepon]
 $sysconf['template']['bk_new_collection'] = 1;
 
 // buku tamu (kiosk)
+$sysconf['template']['bk_kiosk_layout'] = 'split';
 $sysconf['template']['bk_kiosk_camera'] = 0;
 $sysconf['template']['bk_kiosk_repeat_seconds'] = 10;
 $sysconf['template']['visitor_log_voice'] = 0;
@@ -153,6 +154,17 @@ $sysconf['template']['option'][$sysconf['template']['theme']] = [
         'type' => 'dropdown',
         'default' => 1,
         'data' => $bk_yes_no
+    ],
+    'kiosk-layout' => [
+        'dbfield' => 'bk_kiosk_layout',
+        'label' => 'Buku tamu: tata letak (per perangkat bisa ditimpa dengan index.php?p=visitor&layout=split|center|camera)',
+        'type' => 'dropdown',
+        'default' => 'split',
+        'data' => [
+            ['split', 'Panel terbelah: form terang + sapaan gelap (layar lebar)'],
+            ['center', 'Ringkas: satu panel di tengah (tablet tegak)'],
+            ['camera', 'Kamera utama: pindai QR lewat webcam, gelap (butuh HTTPS)'],
+        ]
     ],
     'kiosk-camera' => [
         'dbfield' => 'bk_kiosk_camera',

@@ -91,20 +91,20 @@ function biblio_list_format($dbs, $biblio_detail, $n, $settings = array(), &$ret
         }
         foreach ($_authors as $a) {
             $a = trim($a);
-            $_authors_string .= '<a href="index.php?author='.urlencode($a).'&search=Search" itemprop="name" property="name" class="btn btn-outline-secondary btn-rounded">'.$a.'</a>';
+            $_authors_string .= '<a href="index.php?author='.urlencode($a).'&search=Search" itemprop="name" property="name" class="bk-chip">'.$a.'</a>';
         }
     }
 
     if (($_POST['view'] ?? $_SESSION['LIST_VIEW'] ?? 'list') === 'list'):
 
-        $output .= '<div id="card-' . $biblio_id . '" class="card item border-0 elevation-1 mb-6">';
+        $output .= '<div id="card-' . $biblio_id . '" class="card item bk-result mb-4">';
         $output .= '<div class="card-body">';
         $output .= '<div class="row">';
-        $output .= '<div class="col-12 col-md-2">';
+        $output .= '<div class="col-4 col-md-2 bk-result__cover">';
         $output .= '<img loading="lazy" src="'.$thumb_url.'" alt="cover" class="img-fluid rounded '.($availability > 0 ?: 'not-available').'" title="' . ($availability > 0 ?:  __('Items is not available')) . '"/>';
         $output .= '</div>'; // -- close col-2
-        $output .= '<div class="col-8">';
-        $output .= '<h5><a title="'.__('View record detail description for this title').'" class="card-link text-dark" href="'.$detail_url.'">'.stripslashes(addEllipsis($title, 80)).'</a></h5>';
+        $output .= '<div class="col-8 col-md-8 bk-result__body">';
+        $output .= '<h2 class="bk-result__title"><a title="'.__('View record detail description for this title').'" class="card-link" href="'.$detail_url.'">'.stripslashes(addEllipsis($title, 80)).'</a></h2>';
         $output .= createButton($biblio_id, $biblio_detail['title']);
         $output .= '<div class="d-flex authors flex-wrap py-2">';
         $output .= $_authors_string;
@@ -112,17 +112,17 @@ function biblio_list_format($dbs, $biblio_detail, $n, $settings = array(), &$ret
         $output .= '<p>'.$notes.'</p>';
         $output .= '<div id="expand-'.$biblio_id.'" class="collapse py-2 collapse-detail">'.$custom_field.'</div>';
         $output .= '</div>'; // -- close col-8
-        $output .= '<div class="col-2 hidden md:block">';
-        $output .= '<div class="card availability cursor-pointer">';
+        $output .= '<div class="col-12 col-md-2 bk-result__side">';
+        $output .= '<div class="card availability bk-avail">';
         $output .= '<div class="card-body pt-3 pb-2 px-1">';
         $output .= '<div class="d-flex availability-content flex-column">';
         $output .= '<span class="label">'.__('Availability').'</span>';
         $output .= '<span class="value '.$class_avail.'">'.$availability.'</span>';
         $output .= '</div>'; // -- close d-flex flex-column
-        $output .= '<div class="add-to-chart add-to-chart-button align-items-center justify-content-center flex-column" data-biblio="'.$biblio_id.'">';
-        $output .= '<span class="label">'. __('Add to basket') .'</span>';
-        $output .= '<span class="value"><i class="fas fa-plus"></i></span>';
-        $output .= '</div>'; // -- close d-flex flex-column
+        $output .= '<button type="button" class="bk-avail__basket add-to-chart-button" data-biblio="'.$biblio_id.'">';
+        $output .= '<span>'. __('Add to basket') .'</span>';
+        $output .= '<i class="fas fa-plus" aria-hidden="true"></i>';
+        $output .= '</button>';
         $output .= '</div>'; // -- close card-body pt-3 pb-2 px-1
         $output .= '</div>'; // -- close card availability
         //  $output .= '<a class="btn btn-outline-primary btn-block mt-2 btn-sm" href="'.$detail_url.'">'.__('View Detail').'</a>';

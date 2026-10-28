@@ -9,14 +9,7 @@
 ?>
 
 <div class="result-search">
-    <section id="section1 container-fluid">
-        <header class="c-header bk-header">
-                      <?php
-          // ----------------------------------------------------------------------
-          // include navbar part
-          // ----------------------------------------------------------------------
-          include '_navbar.php'; ?>
-        </header>
+    <section class="bk-searchbar">
       <?php
       // ------------------------------------------------------------------------
       // include search form part
@@ -24,7 +17,7 @@
       include '_search-form.php'; ?>
     </section>
 
-    <section id="bk-main" class="container mt-5 bk-page">
+    <section id="bk-main" class="container bk-page">
         <div class="row">
             <div class="col-md-3">
                 <h4><?= __('Filter by') ?></h4>
