@@ -31,5 +31,9 @@ check "language selection only accepts xx_XX codes" \
   "grep -q 'dropInvalidLang(\$_COOKIE, .select_lang.)' sysconfig.inc.php"
 check "user image to delete is not taken from the form" \
   "! grep -q \"_POST\['old_user_image'\]\" admin/modules/system/app_user.php"
+check "visitor response hides database errors in production" \
+  "grep -q \"'status' => ENVIRONMENT === 'production'\" lib/contents/visitor.inc.php"
+check "visitor rate limit counts IPv6 per /64" \
+  "grep -q 'self::rateLimitKey(' lib/Visitor.php"
 
 exit $fail
