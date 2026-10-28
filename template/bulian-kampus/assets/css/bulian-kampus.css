@@ -395,7 +395,7 @@ html.bk-js { scroll-padding-top: calc(var(--bk-nav-h, 52px) + 12px); }
 .bk-kiosk__lead { font-size: 1.0625rem; color: var(--bk-muted); margin: 0 0 16px; }
 .bk-kiosk__form label, .bk-kiosk__guest label { display: block; font-weight: 700; margin: 10px 0 6px; }
 .bk-kiosk__row { display: flex; gap: 8px; }
-.bk-kiosk input[type="text"] { flex: 1; min-width: 0; width: 100%; font: inherit; font-size: 1.25rem; padding: 10px 14px; border: 1px solid #9AA8B8; border-radius: 6px; background: #FFFFFF; color: var(--bk-ink); }
+.bk-kiosk input[type="text"] { box-sizing: border-box; flex: 1; min-width: 0; width: 100%; font: inherit; font-size: 1.25rem; padding: 10px 14px; border: 1px solid #9AA8B8; border-radius: 6px; background: #FFFFFF; color: var(--bk-ink); }
 .bk-kiosk input[type="text"]:focus { border-color: var(--bk-primary); outline: none; box-shadow: 0 0 0 3px rgba(0, 103, 184, 0.25); }
 .bk-kiosk button { font: inherit; font-weight: 900; padding: 10px 18px; border: 0; border-radius: 6px; background: var(--bk-primary); color: #FFFFFF; cursor: pointer; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .bk-kiosk button:hover { filter: brightness(0.92); }
