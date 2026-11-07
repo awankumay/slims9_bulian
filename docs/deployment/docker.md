@@ -80,6 +80,10 @@ IP pengunjung: Apache (`mod_remoteip`) mengambil IP asli dari header `CF-Connect
 
 Jika sesi login harus hanya lewat HTTPS, tambahkan `session.cookie_secure = 1` di `docker/php/zz-slims.ini`. Akses langsung lewat `http://127.0.0.1:8881` setelah itu tidak bisa login.
 
+## Menyiapkan server production
+
+Sebelum container dipasang di VPS Ubuntu 26.04, gunakan script di `deploy/server/`: hardening dan SSH key-only, firewall UFW (termasuk aturan `DOCKER-USER`, karena port yang di-publish Docker melewati UFW), MariaDB standalone di host, dan fail2ban untuk log WAF. Setiap script punya mode `--dry-run` (alias `--check`), dan `check-all.sh` memeriksa semuanya tanpa mengubah apa pun. Lihat [`deploy/server/README.md`](../../deploy/server/README.md).
+
 ## Upgrade dari docker-compose lama (v9.8.0 asli)
 
 Perubahan yang perlu diperhatikan:
