@@ -14,14 +14,14 @@ Rencana lengkapnya ada di dokumen "Rencana Deploy Production EPrints & SLiMS".
 
 ## Cara pakai
 
-Jalankan dari sesi SSH lewat VPN, sebagai user yang ada di `SSH_ALLOW_USERS`:
+Jalankan dari sesi SSH lewat VPN, sebagai user yang boleh SSH menurut `SSH_ALLOW_USERS`/`SSH_ALLOW_GROUPS`:
 
 ```bash
 # Script ini sama persis di repo eprints-docker dan slims9_bulian; cukup dari salah satu.
 git clone -b develop https://github.com/awankumay/eprints-docker.git
 cd eprints-docker/deploy/server     # atau: slims9_bulian/deploy/server
 cp server.env.example server.env && chmod 600 server.env
-nano server.env              # ADMIN_CIDRS (subnet VPN) dan SSH_ALLOW_USERS wajib
+nano server.env              # ADMIN_CIDRS (subnet VPN) dan SSH_ALLOW_USERS/SSH_ALLOW_GROUPS wajib
 
 sudo ./check-all.sh          # lihat dulu apa yang akan berubah
 sudo ./01-hardening.sh       # lalu uji login SSH dari terminal BARU
@@ -62,10 +62,19 @@ jalan bila UFW belum aktif. Semua script aman dijalankan ulang.
 
 ## Pengaman agar tidak terkunci
 
-- `01` berhenti bila user yang sedang login tidak ada di `SSH_ALLOW_USERS`, atau ada user
-  yang belum punya `~/.ssh/authorized_keys`. Konfigurasi SSH diuji dengan `sshd -t` dan
-  dibatalkan bila tidak valid. Berkasnya bernama `00-hardening.conf` agar menang atas
-  `50-cloud-init.conf` (sshd memakai nilai pertama yang ditemukan).
+- `01` membaca juga `AllowUsers`/`AllowGroups` yang sudah ada di `/etc/ssh/sshd_config` dan
+  `sshd_config.d/`. sshd menggabungkan semuanya, dan bila keduanya ada, user harus lolos
+  **keduanya**. Contoh: `sshd_config` berisi `AllowGroups admin devops sshusers` dan
+  `SSH_ALLOW_USERS="infra"`, maka hanya `infra` yang boleh, dan itu pun hanya bila `infra`
+  anggota salah satu grup tadi. Bila Tim Infra memakai akun masing-masing dalam satu grup,
+  isi `SSH_ALLOW_USERS=""` dan `SSH_ALLOW_GROUPS="admin devops sshusers"`.
+- `01` berhenti bila user yang sedang login akan ditolak sshd, bila ada user di
+  `SSH_ALLOW_USERS` yang tidak ada, tidak lolos `AllowGroups`, atau belum punya
+  `~/.ssh/authorized_keys`. Anggota grup tanpa kunci dilaporkan sebagai peringatan.
+  Konfigurasi SSH diuji dengan `sshd -t`, lalu nilai efektif `sshd -T` diperiksa sekali lagi
+  untuk user yang login; bila gagal, berkasnya dikembalikan. Berkasnya bernama
+  `00-hardening.conf` agar menang atas `50-cloud-init.conf` (sshd memakai nilai pertama yang
+  ditemukan, kecuali `AllowUsers`/`AllowGroups` yang ditumpuk).
 - `02` berhenti bila IP sesi SSH ini tidak termasuk `ADMIN_CIDRS`.
 - Biarkan satu sesi SSH tetap terbuka dan uji login dari terminal baru setelah `01` dan `02`.
   Bila tetap terkunci, gunakan konsol VPS dari panel penyedia: `ufw disable` dan
