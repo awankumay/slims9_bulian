@@ -8,8 +8,8 @@ Rencana lengkapnya ada di dokumen "Rencana Deploy Production EPrints & SLiMS".
 | `01-hardening.sh` | Update + `unattended-upgrades` (keamanan saja, tanpa reboot otomatis), SSH key-only di port 22 (`AllowUsers`, root mati), password root dikunci, sysctl, core dump mati, chrony, auditd, AppArmor, batas journald |
 | `02-firewall.sh` | UFW: SSH 22 dan web 80/443 hanya dari VPN, 3306 hanya dari network Docker. Aturan `DOCKER-USER` agar port container lain (8080 EPrints, 8881 SLiMS) tidak bisa dibuka dari luar, karena Docker melewati UFW |
 | `03-mariadb-install.sh` | MariaDB dari repo Ubuntu (11.8 di Ubuntu 26.04), diamankan setara `mariadb-secure-installation`, tuning dasar, masih hanya `127.0.0.1` |
-| `04-mariadb-config.sh` | Buka 3306 untuk container (hanya setelah UFW aktif), database + user `eprints` dan `senayan`/`slims` dengan password acak, skema SLiMS (opsional), backup harian via systemd timer |
-| `05-fail2ban.sh` | Jail `sshd`, `waf-modsec`, `nginx-limit-req`, `nginx-botsearch`, `recidive`. Ban web masuk ke chain `DOCKER-USER`. IP VPN dan Docker tidak pernah di-ban |
+| `04-mariadb-config.sh` | Buka 3306 untuk container: lewat UFW (`DB_BIND=any`) atau hanya di IP gateway Docker (`DB_BIND=docker-gw`), database + user `eprints` dan `senayan`/`slims` dengan password acak, skema SLiMS (opsional), backup harian via systemd timer |
+| `05-fail2ban.sh` | Jail `sshd`, `waf-modsec`, `nginx-limit-req`, `nginx-botsearch`, `recidive` (atau hanya jail WAF dengan `F2B_SCOPE=waf`). Ban web masuk ke chain `DOCKER-USER`. IP VPN dan Docker tidak pernah di-ban |
 | `check-all.sh` | Menjalankan 01-05 dengan `--dry-run` sekaligus dan menampilkan ringkasan; tidak mengubah apa pun |
 
 ## Cara pakai
@@ -31,6 +31,32 @@ sudo ./04-mariadb-config.sh
 sudo ./05-fail2ban.sh
 ```
 
+### Server yang hardening, firewall, dan fail2ban-nya dikelola Tim Infra
+
+Bila Anda vendor/tim aplikasi dan SSH, firewall, serta fail2ban sudah disiapkan Tim Infra,
+jangan jalankan `01` dan `02`. Cukup jalankan `--dry-run` keduanya dan serahkan hasilnya ke
+Tim Infra sebagai masukan. Untuk bagian aplikasi, isi `server.env`:
+
+```bash
+DB_BIND="docker-gw"   # MariaDB hanya di 127.0.0.1 + gateway Docker, tanpa bergantung UFW
+F2B_SCOPE="waf"       # hanya tambah jail WAF; sshd/recidive/[DEFAULT] milik Infra tidak diubah
+```
+
+lalu:
+
+```bash
+sudo ./check-all.sh 01 02 > laporan-untuk-infra.txt   # hanya dibaca, tidak mengubah apa pun
+sudo ./check-all.sh 03 04 05                          # cek bagian aplikasi
+sudo ./03-mariadb-install.sh
+sudo ./04-mariadb-config.sh       # setelah network Docker eprints-net/slims-net dibuat
+sudo ./05-fail2ban.sh
+```
+
+Dengan `DB_BIND="docker-gw"`, `04` menulis `bind-address = 127.0.0.1,192.168.121.1,192.168.121.33`
+dan `net.ipv4.ip_nonlocal_bind = 1` agar MariaDB tetap bisa start walaupun bridge Docker
+belum ada (saat boot atau setelah `docker compose down`). Bila UFW aktif, Tim Infra perlu
+mengizinkan 3306 dari `DOCKER_CIDR`; `04` memperingatkan bila aturannya belum ada.
+
 ## Mode periksa (`--dry-run` / `--check`)
 
 Setiap script menerima `--dry-run` (alias `--check` atau `-n`). Pada mode ini tidak ada yang
@@ -42,6 +68,7 @@ yang akan dijalankan dicetak. Pengaman anti-terkunci tetap diperiksa.
 sudo ./02-firewall.sh --dry-run     # satu script
 sudo ./check-all.sh                 # 01-05 sekaligus, dengan ringkasan
 sudo ./check-all.sh -q              # ringkasan saja
+sudo ./check-all.sh 03 04 05        # hanya script tertentu
 ```
 
 Tanda di output: `[sesuai]` sudah sesuai, `[akan]` akan diubah, `[perintah]` perintah yang
@@ -58,7 +85,7 @@ berubah di luar script (drift), mis. dari cron yang mengirim email bila exit cod
 Saat dijalankan sungguhan, item yang berubah ditandai `[ubah]`.
 
 Urutannya penting: firewall dipasang sebelum MariaDB dibuka ke jaringan, dan `04` menolak
-jalan bila UFW belum aktif. Semua script aman dijalankan ulang.
+jalan bila UFW belum aktif (kecuali `DB_BIND="docker-gw"`). Semua script aman dijalankan ulang.
 
 ## Pengaman agar tidak terkunci
 

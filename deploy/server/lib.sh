@@ -110,11 +110,14 @@ load_env() {
   : "${EPRINTS_DB_NAME:=eprints}" "${EPRINTS_DB_USER:=eprints}" "${SLIMS_DB_NAME:=senayan}" "${SLIMS_DB_USER:=slims}"
   : "${SLIMS_SQL:=}" "${DB_BACKUP_DIR:=/var/backups/mariadb}" "${DB_BACKUP_KEEP_DAYS:=14}" "${DB_BACKUP_TIME:=01:30}"
   : "${WAF_LOG_DIR:=/var/log/waf}" "${WAF_LOG_OWNER:=101:101}" "${F2B_BANTIME:=1h}" "${F2B_FINDTIME:=10m}"
+  : "${DB_BIND:=any}" "${DB_BIND_ADDRS:=192.168.121.1 192.168.121.33}" "${F2B_SCOPE:=all}"
   local c
   for c in $ADMIN_CIDRS $WEB_EXTRA_CIDRS $DOCKER_CIDR; do
     valid_cidr "$c" || die "CIDR tidak valid di server.env: $c"
   done
   [[ "$WEB_ACCESS" == vpn || "$WEB_ACCESS" == any ]] || die "WEB_ACCESS harus vpn atau any."
+  [[ "$DB_BIND" == any || "$DB_BIND" == docker-gw ]] || die "DB_BIND harus any atau docker-gw."
+  [[ "$F2B_SCOPE" == all || "$F2B_SCOPE" == waf ]] || die "F2B_SCOPE harus all atau waf."
   [[ "$SSH_PERMIT_ROOT" == no || "$SSH_PERMIT_ROOT" == prohibit-password ]] \
     || die "SSH_PERMIT_ROOT harus no atau prohibit-password."
 }
