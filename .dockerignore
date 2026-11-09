@@ -35,3 +35,6 @@ js/quaggaJS/simple-https-server.py
 setup.sh
 slims.sh
 backups
+
+# Script setup server (dijalankan di host, bukan bagian image)
+deploy

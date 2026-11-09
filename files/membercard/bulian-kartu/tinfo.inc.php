@@ -11,6 +11,9 @@ foreach (include __DIR__ . '/defaults.inc.php' as $bk_key => [$bk_stock, $bk_own
   if ($bk_now === '' || strpos($bk_now, $bk_stock) !== false) $bk[$bk_key] = $bk_own;
 }
 
+require_once __DIR__ . '/card-lib.inc.php';
+[$bk_w, $bk_h] = bk_card_size($bk, false);
+
 $sysconf['print'][$theme_key] = [
   'template' => [
     'dbfield' => 'template',
@@ -73,14 +76,14 @@ $sysconf['print'][$theme_key] = [
     'dbfield' => 'data[box_width]',
     'label' => __('Box Width') . ' (cm)',
     'type' => 'text',
-    'default' => $bk['box_width'] ?? 8.56,
+    'default' => $bk_w,
     'width' => '20'
   ],
   'box_height' => [
     'dbfield' => 'data[box_height]',
     'label' => __('Box Height') . ' (cm)',
     'type' => 'text',
-    'default' => $bk['box_height'] ?? 5.4,
+    'default' => $bk_h,
     'width' => '20'
   ],
   'show_qr' => [

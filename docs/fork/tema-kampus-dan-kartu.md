@@ -174,6 +174,30 @@ Kartu Anggota → Member card print settings → bulian-kartu → Activate**, la
   Card", "My Library", dst.), kartu memakai teks Bahasa Indonesia dari
   `defaults.inc.php`.
 
+### Varian tegak `bulian-kartu-potret`
+
+Lokasi: `files/membercard/bulian-kartu-potret/`, diaktifkan dengan cara yang
+sama. Kartu CR80 tegak (5,4 × 8,6 cm) untuk lanyard.
+
+- Depan: penanda lubang lanyard, judul kartu, nama perpustakaan dan perguruan
+  tinggi, foto 3×4, nama (maks. 2 baris), nomor anggota, jenis anggota dan
+  masa berlaku, instansi/prodi, lalu satu kode: QR **atau** barcode Code128.
+- **Pakai QR** di Customize: "Ya" = hanya QR, "Tidak" = hanya barcode.
+  Keduanya berisi nomor anggota yang sama, jadi cukup satu. Pilih "Tidak"
+  bila pemindai sirkulasi hanya membaca barcode 1D; kiosk buku tamu membaca
+  keduanya.
+- Belakang: ketentuan anggota, kota/tanggal, jabatan, tanda tangan dan
+  stempel (`signature.png`/`stamp.png` di folder `images/` tema ini), nama dan
+  NIP pejabat, alamat.
+- **Lembar cetak A4** di Customize: "Depan + belakang berdampingan" (3
+  anggota per halaman) atau "Bolak-balik" (9 kartu depan di halaman 1, sisi
+  belakang di halaman 2 dengan kolom dicerminkan; cetak duplex, balik pada
+  tepi panjang).
+- Setelan kartu dipakai bersama semua tema kartu. Ukuran yang tersimpan dari
+  tema lanskap otomatis dibalik menjadi tegak, dan sebaliknya.
+- Teks bawaan, font, dan fungsi barcode/QR diambil dari folder
+  `bulian-kartu`, jadi folder itu harus tetap ada.
+
 ### Instalasi Docker yang sudah berjalan
 
 `files/` disimpan di volume `appfiles`. Volume yang sudah ada tidak ikut
