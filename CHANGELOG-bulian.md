@@ -37,6 +37,7 @@ Riwayat SLiMS upstream ada di `changes.txt`.
 - Hook plugin `MEMBER_ON_VISIT` kini menerima data anggota (sebelumnya `false`).
 
 ### Docker
+- Script setup server production di `deploy/server/` (sama dengan repo `eprints-docker`): hardening Ubuntu 26.04, UFW + `DOCKER-USER`, MariaDB standalone untuk EPrints dan SLiMS, backup harian, dan fail2ban untuk log WAF. Semua script punya mode `--dry-run`/`--check`. Folder `deploy` tidak ikut ke image.
 - Header keamanan baru di image: `Strict-Transport-Security` (1 tahun, `includeSubDomains`), `Referrer-Policy: strict-origin-when-cross-origin`, dan `Permissions-Policy` (kamera hanya untuk situs sendiri; mikrofon, lokasi, pembayaran, USB, sensor gerak dimatikan). Butuh rebuild image.
 - Script operasional `setup.sh` (instalasi pertama: `.env` dengan password DB acak, build, tunggu healthy, tampilkan password admin) dan `slims.sh` (status, start/stop/restart, logs, konsol DB, backup DB, shell, update, cek header).
 

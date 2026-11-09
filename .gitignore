@@ -74,3 +74,6 @@ tarsius
 
 # Database dumps from ./slims.sh backup
 /backups/
+
+# Konfigurasi lokal script setup server
+deploy/server/server.env
