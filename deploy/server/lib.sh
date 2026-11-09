@@ -131,8 +131,16 @@ PY
 }
 
 # IP klien SSH sesi ini (juga bekerja di bawah sudo, lewat `who -m`).
+# sudo/su membuang SSH_CONNECTION, dan who -m kosong di Ubuntu 26.04 (tanpa utmp),
+# jadi cari SSH_CONNECTION di environment proses induk (shell login SSH).
 ssh_client_ip() {
   if [[ -n "${SSH_CONNECTION:-}" ]]; then echo "${SSH_CONNECTION%% *}"; return; fi
+  local pid=$$ v
+  while [[ -n "$pid" && "$pid" -gt 1 ]]; do
+    v="$(tr '\0' '\n' <"/proc/$pid/environ" 2>/dev/null | sed -n 's/^SSH_CONNECTION=//p' | head -n1)"
+    [[ -n "$v" ]] && { echo "${v%% *}"; return; }
+    pid="$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')"
+  done
   who -m 2>/dev/null | sed -n 's/.*(\([0-9a-fA-F.:]*\)).*/\1/p' | head -n1
 }
 

@@ -77,6 +77,18 @@ jalan bila UFW belum aktif. Semua script aman dijalankan ulang.
   ditemukan, kecuali `AllowUsers`/`AllowGroups` yang ditumpuk).
 - `02` berhenti bila IP sesi SSH ini tidak termasuk `ADMIN_CIDRS`.
 - Biarkan satu sesi SSH tetap terbuka dan uji login dari terminal baru setelah `01` dan `02`.
+- `02` hanya bisa mengecek IP sesi yang sedang dipakai. Bila server diakses lewat lebih dari
+  satu VPN (mis. OpenVPN dan FortiClient), cek IP asal tiap jalur dengan
+  `sudo ss -tnp state established '( sport = :22 )'` (kolom Peer) atau minta pool IP klien
+  VPN ke Tim Infra, lalu masukkan semua subnetnya ke `ADMIN_CIDRS`. Untuk jaga-jaga, pasang
+  rollback otomatis sebelum `02`:
+
+  ```bash
+  sudo systemd-run --on-active=10m --unit=ufw-rollback ufw disable
+  sudo ./02-firewall.sh
+  # uji login dari semua jalur VPN di terminal baru, lalu batalkan rollback:
+  sudo systemctl stop ufw-rollback.timer
+  ```
   Bila tetap terkunci, gunakan konsol VPS dari panel penyedia: `ufw disable` dan
   `rm /etc/ssh/sshd_config.d/00-hardening.conf && systemctl reload ssh`.
 
