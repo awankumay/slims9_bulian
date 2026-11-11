@@ -5,7 +5,8 @@
 # Pakai: ./slims-prod.sh check       periksa saja, tidak mengubah apa pun (default;
 #                                    alias --dry-run; exit 0 sesuai, 2 ada perubahan,
 #                                    1 pra-syarat gagal)
-#        sudo ./slims-prod.sh init-env   buat .env dari .env.example + /root/db-credentials.env
+#        sudo ./slims-prod.sh init-env [FILE]   buat .env dari .env.example + kredensial
+#                                    (FILE default: DB_CRED_FILE atau /root/db-credentials.env)
 #        ./slims-prod.sh up [--build]   buat network, jalankan container (image di-build
 #                                    bila belum ada; --build untuk build ulang)
 #        ./slims-prod.sh down        hentikan container (volume dan network tetap)
@@ -13,7 +14,7 @@
 set -Eeuo pipefail
 cd "$(dirname "$0")"
 ENV_FILE="$PWD/.env"
-CRED=/root/db-credentials.env
+CRED="${DB_CRED_FILE:-/root/db-credentials.env}"
 
 if [[ -t 1 ]]; then B=$'\e[1m'; G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; C=$'\e[36m'; N=$'\e[0m'; else B=''; G=''; Y=''; R=''; C=''; N=''; fi
 step() { printf '\n%s==> %s%s\n' "$B$C" "$*" "$N"; }
@@ -51,6 +52,7 @@ in_cidr() { python3 -c 'import ipaddress,sys; sys.exit(0 if ipaddress.ip_address
 # ------------------------------------------------------------------ init-env --
 init_env() {
   [[ -f "$ENV_FILE" ]] && die ".env sudah ada; tidak diubah. Hapus dulu bila ingin membuat ulang."
+  [[ -n "${2:-}" ]] && CRED="$2"
   [[ $EUID -eq 0 ]] || die "Jalankan dengan sudo (membaca $CRED)."
   [[ -r "$CRED" ]] || die "$CRED tidak ada. Jalankan deploy/server/04-mariadb-config.sh dulu."
   local pass name user
@@ -203,10 +205,10 @@ up() {
 
 case "$cmd" in
   check)    check || true; summary ;;
-  init-env) init_env ;;
+  init-env) init_env "$@" ;;
   up)       up ;;
   down)     load_env || die '.env belum ada.'; dc down ;;
   status)   load_env || die '.env belum ada.'; dc ps; docker stats --no-stream "$SLIMS_CONTAINER" 2>/dev/null || true ;;
   logs)     load_env || die '.env belum ada.'; dc logs --tail 100 -f ;;
-  *) sed -n '2,13p' "$0"; exit 1 ;;
+  *) sed -n '2,14p' "$0"; exit 1 ;;
 esac
