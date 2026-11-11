@@ -103,17 +103,21 @@ load_env() {
   # shellcheck source=server.env.example
   source "$f"
   : "${ADMIN_CIDRS:?ADMIN_CIDRS wajib diisi di server.env}"
-  : "${SSH_ALLOW_USERS:?SSH_ALLOW_USERS wajib diisi di server.env}"
+  : "${SSH_ALLOW_USERS:=}" "${SSH_ALLOW_GROUPS:=}"
+  [[ -n "$SSH_ALLOW_USERS$SSH_ALLOW_GROUPS" ]] || die "Isi SSH_ALLOW_USERS dan/atau SSH_ALLOW_GROUPS di server.env."
   : "${SSH_PERMIT_ROOT:=no}" "${TIMEZONE:=Asia/Jakarta}" "${WEB_ACCESS:=vpn}" "${WEB_EXTRA_CIDRS:=}"
   : "${EXT_IF:=}" "${DOCKER_CIDR:=192.168.120.0/23}" "${DB_BUFFER_POOL:=}" "${DB_APP_HOST:=192.168.121.%}"
   : "${EPRINTS_DB_NAME:=eprints}" "${EPRINTS_DB_USER:=eprints}" "${SLIMS_DB_NAME:=senayan}" "${SLIMS_DB_USER:=slims}"
   : "${SLIMS_SQL:=}" "${DB_BACKUP_DIR:=/var/backups/mariadb}" "${DB_BACKUP_KEEP_DAYS:=14}" "${DB_BACKUP_TIME:=01:30}"
   : "${WAF_LOG_DIR:=/var/log/waf}" "${WAF_LOG_OWNER:=101:101}" "${F2B_BANTIME:=1h}" "${F2B_FINDTIME:=10m}"
+  : "${DB_BIND:=any}" "${DB_BIND_ADDRS:=192.168.121.1 192.168.121.33}" "${F2B_SCOPE:=all}"
   local c
   for c in $ADMIN_CIDRS $WEB_EXTRA_CIDRS $DOCKER_CIDR; do
     valid_cidr "$c" || die "CIDR tidak valid di server.env: $c"
   done
   [[ "$WEB_ACCESS" == vpn || "$WEB_ACCESS" == any ]] || die "WEB_ACCESS harus vpn atau any."
+  [[ "$DB_BIND" == any || "$DB_BIND" == docker-gw ]] || die "DB_BIND harus any atau docker-gw."
+  [[ "$F2B_SCOPE" == all || "$F2B_SCOPE" == waf ]] || die "F2B_SCOPE harus all atau waf."
   [[ "$SSH_PERMIT_ROOT" == no || "$SSH_PERMIT_ROOT" == prohibit-password ]] \
     || die "SSH_PERMIT_ROOT harus no atau prohibit-password."
 }
@@ -130,8 +134,16 @@ PY
 }
 
 # IP klien SSH sesi ini (juga bekerja di bawah sudo, lewat `who -m`).
+# sudo/su membuang SSH_CONNECTION, dan who -m kosong di Ubuntu 26.04 (tanpa utmp),
+# jadi cari SSH_CONNECTION di environment proses induk (shell login SSH).
 ssh_client_ip() {
   if [[ -n "${SSH_CONNECTION:-}" ]]; then echo "${SSH_CONNECTION%% *}"; return; fi
+  local pid=$$ v
+  while [[ -n "$pid" && "$pid" -gt 1 ]]; do
+    v="$(tr '\0' '\n' <"/proc/$pid/environ" 2>/dev/null | sed -n 's/^SSH_CONNECTION=//p' | head -n1)"
+    [[ -n "$v" ]] && { echo "${v%% *}"; return; }
+    pid="$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')"
+  done
   who -m 2>/dev/null | sed -n 's/.*(\([0-9a-fA-F.:]*\)).*/\1/p' | head -n1
 }
 

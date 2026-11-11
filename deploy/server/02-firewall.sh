@@ -23,6 +23,7 @@ else
   warn 'IP klien SSH tidak terdeteksi (konsol lokal?).'
   read -r -p '  Lanjutkan? Pastikan ADMIN_CIDRS benar. (y/N) ' a </dev/tty; [[ "$a" =~ ^[yY]$ ]] || exit 1
 fi
+warn "Hanya IP sesi ini yang bisa dicek. Bila ada jalur VPN lain (mis. OpenVPN dan FortiClient), pastikan subnetnya juga ada di ADMIN_CIDRS ($ADMIN_CIDRS)."
 EXT="$(detect_ext_if)"
 [[ -n "$EXT" ]] || die 'Interface publik tidak terdeteksi; isi EXT_IF di server.env.'
 ok "interface publik: $EXT"

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 04 - Konfigurasi MariaDB untuk EPrints dan SLiMS: buka akses dari network Docker,
+# 04 - Konfigurasi MariaDB untuk EPrints dan SLiMS: buka akses dari network Docker
+#      (DB_BIND=any lewat UFW, atau DB_BIND=docker-gw hanya di IP gateway Docker),
 #      buat database + user aplikasi, muat skema SLiMS (opsional), backup harian.
 #
 # Pakai: sudo ./04-mariadb-config.sh             terapkan (aman diulang; password lama dipakai lagi)
@@ -15,11 +16,12 @@ db_up=0
 if command -v mariadb >/dev/null && mariadb -e 'SELECT 1' >/dev/null 2>&1; then db_up=1
 else guard 'MariaDB belum terpasang/berjalan. Jalankan 03-mariadb-install.sh dulu.'; fi
 
+if [[ "$DB_BIND" == any ]]; then
 # ------------------------------------------- pastikan firewall sudah menjaga ---
 step 'Memeriksa firewall sebelum MariaDB dibuka ke jaringan'
 ufw_status="$(ufw status 2>/dev/null || true)"
 if ! grep -q '^Status: active' <<<"$ufw_status"; then
-  guard 'UFW belum aktif. Jalankan 02-firewall.sh dulu: MariaDB akan mendengarkan semua interface.'
+  guard 'UFW belum aktif. Jalankan 02-firewall.sh dulu, atau pakai DB_BIND="docker-gw" bila firewall dikelola Tim Infra.'
 elif ! grep -E '^3306/tcp' <<<"$ufw_status" | grep -q "$DOCKER_CIDR"; then
   guard "Aturan UFW 3306 dari $DOCKER_CIDR tidak ditemukan. Jalankan ulang 02-firewall.sh."
 elif grep -E '^3306' <<<"$ufw_status" | grep -q 'Anywhere'; then
@@ -28,16 +30,49 @@ else
   ok "3306 hanya dari $DOCKER_CIDR"
 fi
 
-step 'Membuka MariaDB untuk container'
+step 'Membuka MariaDB untuk container (DB_BIND=any)'
 # bind 0.0.0.0, bukan IP bridge Docker: interface bridge baru ada setelah Docker
 # start, sehingga MariaDB yang start lebih dulu akan gagal bind. Pembatasnya UFW
 # dan host user (DB_APP_HOST).
-write_file /etc/mysql/mariadb.conf.d/91-network.cnf <<'CONF'
-# Dibuat oleh deploy/server/04-mariadb-config.sh
+bind='0.0.0.0'
+else
+# ---------------------------------------- DB_BIND=docker-gw: tanpa UFW -------
+step 'Membuka MariaDB hanya di IP gateway network Docker (DB_BIND=docker-gw)'
+# MariaDB hanya mendengarkan 127.0.0.1 dan IP gateway bridge Docker, sehingga
+# 3306 tidak tersedia di ens160/LAN walau firewall host tidak dikelola script ini.
+for a in $DB_BIND_ADDRS; do
+  python3 -c 'import ipaddress,sys; ipaddress.IPv4Address(sys.argv[1])' "$a" 2>/dev/null \
+    || die "DB_BIND_ADDRS berisi IP tidak valid: $a"
+  ip_in_cidrs "$a" "$DOCKER_CIDR" || die "DB_BIND_ADDRS $a tidak berada di DOCKER_CIDR ($DOCKER_CIDR)."
+  if ip -o -4 addr show 2>/dev/null | grep -q " $a/"; then ok "$a ada di host ($(ip -o -4 addr show | awk -v a="$a" 'index($4, a"/")==1{print $2}'))"
+  else warn "$a belum ada di host. Buat network Docker-nya (lihat dokumen rencana deploy); MariaDB tetap bisa start berkat ip_nonlocal_bind."; fi
+done
+# Bridge Docker baru dibuat setelah dockerd start, dan hilang saat network dihapus
+# (docker compose down). ip_nonlocal_bind membuat MariaDB tetap bisa bind ke IP itu
+# kapan pun, sehingga MariaDB tidak gagal start saat boot.
+write_file /etc/sysctl.d/91-mariadb-nonlocal-bind.conf <<'CONF'
+# Dibuat oleh deploy/server/04-mariadb-config.sh (DB_BIND=docker-gw)
+net.ipv4.ip_nonlocal_bind = 1
+CONF
+if [[ "$(sysctl -n net.ipv4.ip_nonlocal_bind 2>/dev/null)" == 1 ]]; then same 'net.ipv4.ip_nonlocal_bind = 1'
+else plan 'sysctl net.ipv4.ip_nonlocal_bind = 1'; runq sysctl -q -w net.ipv4.ip_nonlocal_bind=1; fi
+# Firewall host milik Tim Infra tetap harus mengizinkan 3306 dari network Docker.
+ufw_status="$(ufw status 2>/dev/null || true)"
+if grep -q '^Status: active' <<<"$ufw_status" && ! grep -E '^3306/tcp' <<<"$ufw_status" | grep -q "$DOCKER_CIDR"; then
+  warn "UFW aktif tanpa aturan 3306 dari $DOCKER_CIDR; container tidak akan bisa konek. Minta Tim Infra: ufw allow from $DOCKER_CIDR to any port 3306 proto tcp"
+fi
+bind="127.0.0.1,$(tr -s ' ' ',' <<<"$(xargs <<<"$DB_BIND_ADDRS")")"
+fi
+
+write_file /etc/mysql/mariadb.conf.d/91-network.cnf <<CONF
+# Dibuat oleh deploy/server/04-mariadb-config.sh (DB_BIND=$DB_BIND)
 [mysqld]
-bind-address = 0.0.0.0
+bind-address = $bind
 CONF
 [[ $WF_CHANGED -eq 1 ]] && run systemctl restart mariadb
+if [[ $DRY_RUN -eq 0 && $db_up -eq 1 ]]; then
+  ss -ltn 2>/dev/null | awk '$4 ~ /:3306$/{print "      mendengarkan: "$4}'
+fi
 
 # ------------------------------------------------------- database dan user ---
 step 'Database dan user aplikasi'
@@ -149,7 +184,7 @@ UNIT
 if [[ $backup_changed -eq 1 ]]; then runq systemctl daemon-reload; fi
 if systemctl is-enabled --quiet mariadb-backup-daily.timer 2>/dev/null; then same 'timer backup aktif'
 else plan 'aktifkan timer backup'; runq systemctl enable --now mariadb-backup-daily.timer; fi
-n_backup=$(find "$DB_BACKUP_DIR" -name '*.sql.gz' 2>/dev/null | wc -l)
+n_backup=0; [[ -d "$DB_BACKUP_DIR" ]] && n_backup=$(find "$DB_BACKUP_DIR" -name '*.sql.gz' | wc -l)
 if [[ $n_backup -eq 0 ]]; then
   plan 'jalankan backup pertama sebagai uji'; run systemctl start mariadb-backup-daily.service
 else
