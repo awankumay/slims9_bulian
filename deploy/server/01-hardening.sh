@@ -7,6 +7,7 @@
 #                                           (alias --check; exit 0 sesuai, 2 ada perubahan)
 source "$(dirname "$0")/lib.sh"
 parse_args "$@"; need_root "$@"; load_env; check_ubuntu
+[[ -n "$SSH_ALLOW_USERS$SSH_ALLOW_GROUPS" ]] || die "Isi SSH_ALLOW_USERS dan/atau SSH_ALLOW_GROUPS di server.env."
 
 # ------------------------------------------------------- pra-cek anti terkunci
 step 'Memeriksa akses SSH sebelum mengubah apa pun'
