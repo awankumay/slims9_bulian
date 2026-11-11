@@ -8,6 +8,7 @@
 #                                          (alias --check; exit 0 sesuai, 2 ada perubahan)
 source "$(dirname "$0")/lib.sh"
 parse_args "$@"; need_root "$@"; load_env; check_ubuntu
+[[ -n "$ADMIN_CIDRS" ]] || die "ADMIN_CIDRS wajib diisi di server.env untuk 02-firewall.sh (subnet VPN yang boleh SSH)."
 RESET=0; has_arg --reset && RESET=1
 
 # ------------------------------------------------------- pra-cek anti terkunci

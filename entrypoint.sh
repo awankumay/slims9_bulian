@@ -68,10 +68,18 @@ cp -a /usr/src/slims-membercard/. "$APP_DIR/files/membercard/"
 chown -R root:root "$APP_DIR/files/membercard"
 chmod -R go-w "$APP_DIR/files/membercard"
 
-# Behind Cloudflare Tunnel every request comes from cloudflared. Take the client
-# IP from CF-Connecting-IP, but only from the trusted proxy address, so the
+# Behind Cloudflare Tunnel or the WAF every request comes from the proxy. Take
+# the client IP from TRUSTED_PROXY_HEADER (CF-Connecting-IP for the tunnel,
+# X-Forwarded-For for the WAF), but only from the trusted proxy address, so the
 # header cannot be spoofed through the published HTTP port.
 REMOTEIP_CONF=/etc/apache2/conf-enabled/zz-remoteip.conf
+TRUSTED_PROXY_HEADER="${TRUSTED_PROXY_HEADER:-CF-Connecting-IP}"
+case "${TRUSTED_PROXY_HEADER}" in
+    *[!A-Za-z0-9-]*|"")
+        echo "ERROR: TRUSTED_PROXY_HEADER must be a header name, got: ${TRUSTED_PROXY_HEADER}" >&2
+        exit 1
+        ;;
+esac
 case "${TRUSTED_PROXY}" in
     "") rm -f "$REMOTEIP_CONF" ;;
     *[!0-9A-Fa-f.:/\ ]*)
@@ -79,8 +87,8 @@ case "${TRUSTED_PROXY}" in
         exit 1
         ;;
     *)
-        printf 'RemoteIPHeader CF-Connecting-IP\nRemoteIPInternalProxy %s\n' "$TRUSTED_PROXY" > "$REMOTEIP_CONF"
-        echo "Client IP taken from CF-Connecting-IP when sent by: ${TRUSTED_PROXY}"
+        printf 'RemoteIPHeader %s\nRemoteIPInternalProxy %s\n' "$TRUSTED_PROXY_HEADER" "$TRUSTED_PROXY" > "$REMOTEIP_CONF"
+        echo "Client IP taken from ${TRUSTED_PROXY_HEADER} when sent by: ${TRUSTED_PROXY}"
         ;;
 esac
 

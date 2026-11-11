@@ -84,6 +84,30 @@ Jika sesi login harus hanya lewat HTTPS, tambahkan `session.cookie_secure = 1` d
 
 Sebelum container dipasang di VPS Ubuntu 26.04, gunakan script di `deploy/server/`: hardening dan SSH key-only, firewall UFW (termasuk aturan `DOCKER-USER`, karena port yang di-publish Docker melewati UFW), MariaDB standalone di host, dan fail2ban untuk log WAF. Setiap script punya mode `--dry-run` (alias `--check`), dan `check-all.sh` memeriksa semuanya tanpa mengubah apa pun. Lihat [`deploy/server/README.md`](../../deploy/server/README.md).
 
+### SLiMS di server production: `deploy/production/`
+
+`compose.yaml` di root repo menjalankan SLiMS beserta container MariaDB-nya sendiri. Untuk
+server production yang memakai MariaDB di host (`deploy/server/03` dan `04`), pakai
+[`deploy/production/`](../../deploy/production/):
+
+```bash
+cd deploy/production
+sudo ./slims-prod.sh init-env   # .env dari .env.example + SLIMS_DB_* dari /root/db-credentials.env
+./slims-prod.sh check           # periksa tanpa mengubah apa pun (alias --dry-run)
+./slims-prod.sh up              # buat network slims-net, muat skema bila DB kosong, jalankan
+./slims-prod.sh status          # status + pemakaian CPU/RAM
+```
+
+Yang diatur `deploy/production/compose.yaml`:
+
+- Network `slims-net` `192.168.121.32/27` (gateway `.33` = MariaDB host, WAF `.34`, SLiMS `.35`,
+  IP otomatis hanya `.48/28`), bridge `br-slims`.
+- `no-new-privileges`, `cap_drop: ALL` + `CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID, KILL,
+  NET_BIND_SERVICE`, `/tmp` tmpfs `noexec`, rotasi log json-file.
+- Batas `SLIMS_CPUS` (2), `SLIMS_MEMORY` (1g, tanpa swap tambahan), `SLIMS_PIDS` (512).
+- Port uji hanya di `127.0.0.1:8881`; IP pengunjung diambil dari `X-Forwarded-For` hanya bila
+  request datang dari WAF (`TRUSTED_PROXY`, header `TRUSTED_PROXY_HEADER`).
+
 ## Upgrade dari docker-compose lama (v9.8.0 asli)
 
 Perubahan yang perlu diperhatikan:

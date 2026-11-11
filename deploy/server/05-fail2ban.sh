@@ -63,7 +63,7 @@ echo '  Filter bawaan yang juga dipakai: sshd, nginx-limit-req, nginx-botsearch,
 
 # --------------------------------------------------------------------- jail ---
 step "Jail (F2B_SCOPE=$F2B_SCOPE)"
-ignore="127.0.0.1/8 ::1 $ADMIN_CIDRS $DOCKER_CIDR"
+ignore="$(xargs <<<"127.0.0.1/8 ::1 $ADMIN_CIDRS $DOCKER_CIDR")"
 # Setelan umum: di [DEFAULT] bila server ini dikelola penuh oleh script, atau di
 # setiap jail WAF bila fail2ban milik Tim Infra (F2B_SCOPE=waf) agar [DEFAULT],
 # jail sshd, dan recidive mereka tidak berubah.

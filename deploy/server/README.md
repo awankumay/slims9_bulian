@@ -21,7 +21,7 @@ Jalankan dari sesi SSH lewat VPN, sebagai user yang boleh SSH menurut `SSH_ALLOW
 git clone -b develop https://github.com/awankumay/eprints-docker.git
 cd eprints-docker/deploy/server     # atau: slims9_bulian/deploy/server
 cp server.env.example server.env && chmod 600 server.env
-nano server.env              # ADMIN_CIDRS (subnet VPN) dan SSH_ALLOW_USERS/SSH_ALLOW_GROUPS wajib
+nano server.env              # ADMIN_CIDRS wajib untuk 02, SSH_ALLOW_USERS/GROUPS wajib untuk 01
 
 sudo ./check-all.sh          # lihat dulu apa yang akan berubah
 sudo ./01-hardening.sh       # lalu uji login SSH dari terminal BARU
@@ -48,14 +48,54 @@ lalu:
 sudo ./check-all.sh 01 02 > laporan-untuk-infra.txt   # hanya dibaca, tidak mengubah apa pun
 sudo ./check-all.sh 03 04 05                          # cek bagian aplikasi
 sudo ./03-mariadb-install.sh
-sudo ./04-mariadb-config.sh       # setelah network Docker eprints-net/slims-net dibuat
+sudo ./04-mariadb-config.sh       # database + user; network Docker belum perlu ada
 sudo ./05-fail2ban.sh
 ```
+
+`ADMIN_CIDRS` dan `SSH_ALLOW_USERS`/`SSH_ALLOW_GROUPS` boleh dikosongkan bila `01`/`02` tidak
+dijalankan. Di `05`, `ADMIN_CIDRS` hanya dipakai sebagai daftar IP yang tidak pernah di-ban.
 
 Dengan `DB_BIND="docker-gw"`, `04` menulis `bind-address = 127.0.0.1,192.168.121.1,192.168.121.33`
 dan `net.ipv4.ip_nonlocal_bind = 1` agar MariaDB tetap bisa start walaupun bridge Docker
 belum ada (saat boot atau setelah `docker compose down`). Bila UFW aktif, Tim Infra perlu
 mengizinkan 3306 dari `DOCKER_CIDR`; `04` memperingatkan bila aturannya belum ada.
+
+## Menjalankan aplikasi (setelah 03 dan 04)
+
+Kedua aplikasi memakai MariaDB di host, network Docker dengan subnet tetap, container yang
+di-hardening (`no-new-privileges`, `cap_drop ALL` + cap minimal, `/tmp` tmpfs, rotasi log),
+serta batas CPU/RAM/PIDs. Port aplikasi hanya dibuka di `127.0.0.1` untuk uji dari server;
+pengunjung masuk lewat WAF. Keduanya punya mode periksa yang tidak mengubah apa pun.
+
+| Network | Subnet | Gateway (MariaDB) | WAF | Aplikasi | IP otomatis |
+| --- | --- | --- | --- | --- | --- |
+| `eprints-net` (`br-eprints`) | `192.168.121.0/27` | `.1` | `.2` | `.3` (port 8080) | `.16/28` |
+| `slims-net` (`br-slims`) | `192.168.121.32/27` | `.33` | `.34` | `.35` (port 8881) | `.48/28` |
+
+Container lain (mis. container uji) hanya mendapat IP dari kolom "IP otomatis", sehingga IP
+WAF yang dipercaya untuk header `X-Forwarded-For` tidak bisa diambil container lain.
+
+EPrints (dari root repo `eprints-docker`):
+
+```bash
+sudo ./install.sh --docker -y --production --db-credentials /root/db-credentials.env \
+  --hostname repository.kampus.ac.id --dry-run      # periksa: exit 0 sesuai, 2 ada perubahan, 1 gagal
+sudo ./install.sh --docker -y --production --db-credentials /root/db-credentials.env \
+  --hostname repository.kampus.ac.id                # pasang
+curl -I -H 'Host: repository.kampus.ac.id' http://127.0.0.1:8080/
+```
+
+SLiMS (dari `slims9_bulian/deploy/production`):
+
+```bash
+sudo ./slims-prod.sh init-env    # .env dari .env.example + password dari /root/db-credentials.env
+./slims-prod.sh check            # periksa (alias --dry-run): exit 0 sesuai, 2 ada perubahan, 1 gagal
+./slims-prod.sh up               # buat network, muat skema bila DB kosong, jalankan container
+curl -I http://127.0.0.1:8881/
+```
+
+Batas resource bisa diubah: EPrints dengan `--cpus`, `--memory`, `--pids`; SLiMS lewat
+`SLIMS_CPUS`, `SLIMS_MEMORY`, `SLIMS_PIDS` di `.env`.
 
 ## Mode periksa (`--dry-run` / `--check`)
 

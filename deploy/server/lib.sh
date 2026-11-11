@@ -102,9 +102,8 @@ load_env() {
   [[ -f "$f" ]] || die "server.env belum ada. Jalankan: cp $HERE/server.env.example $f lalu sesuaikan."
   # shellcheck source=server.env.example
   source "$f"
-  : "${ADMIN_CIDRS:?ADMIN_CIDRS wajib diisi di server.env}"
-  : "${SSH_ALLOW_USERS:=}" "${SSH_ALLOW_GROUPS:=}"
-  [[ -n "$SSH_ALLOW_USERS$SSH_ALLOW_GROUPS" ]] || die "Isi SSH_ALLOW_USERS dan/atau SSH_ALLOW_GROUPS di server.env."
+  # ADMIN_CIDRS hanya wajib untuk 02 (firewall); SSH_ALLOW_* hanya untuk 01.
+  : "${ADMIN_CIDRS:=}" "${SSH_ALLOW_USERS:=}" "${SSH_ALLOW_GROUPS:=}"
   : "${SSH_PERMIT_ROOT:=no}" "${TIMEZONE:=Asia/Jakarta}" "${WEB_ACCESS:=vpn}" "${WEB_EXTRA_CIDRS:=}"
   : "${EXT_IF:=}" "${DOCKER_CIDR:=192.168.120.0/23}" "${DB_BUFFER_POOL:=}" "${DB_APP_HOST:=192.168.121.%}"
   : "${EPRINTS_DB_NAME:=eprints}" "${EPRINTS_DB_USER:=eprints}" "${SLIMS_DB_NAME:=senayan}" "${SLIMS_DB_USER:=slims}"
