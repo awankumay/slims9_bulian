@@ -43,10 +43,22 @@ load_env() {
 }
 dc() { docker compose -f compose.yaml --env-file "$ENV_FILE" "$@"; }
 SCHEMA=../../install/senayan.sql
-# Login dari host ke IP gateway: sumber koneksinya IP gateway itu sendiri, sehingga
-# cocok dengan host user aplikasi (192.168.121.%), sama seperti dari container.
-db() { MYSQL_PWD="$DB_PASS" mariadb -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" "$@"; }
+# Klien DB dijalankan di container sementara di slims-net, seperti container SLiMS.
+# Dari host tidak bisa: MASQUERADE Docker mengganti alamat asal ke IP host, sehingga
+# tidak cocok dengan user aplikasi (192.168.121.%).
+DB_CLIENT_IMAGE="${DB_CLIENT_IMAGE:-mariadb:11.8}"
+db() {
+  docker run --rm -i --network "$SLIMS_NETWORK" -e MYSQL_PWD="$DB_PASS" "$DB_CLIENT_IMAGE" \
+    mariadb -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" "$@"
+}
 db_tables() { db -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME'" 2>"$TMPE"; }
+db_err() { grep -v '^WARNING' "$TMPE" | head -n1; }
+pull_db_client() { # koneksi keluar kadang putus: coba 3x
+  docker image inspect "$DB_CLIENT_IMAGE" >/dev/null 2>&1 && return 0
+  local i
+  for i in 1 2 3; do docker pull -q "$DB_CLIENT_IMAGE" >/dev/null && return 0; sleep 5; done
+  return 1
+}
 in_cidr() { python3 -c 'import ipaddress,sys; sys.exit(0 if ipaddress.ip_address(sys.argv[1]) in ipaddress.ip_network(sys.argv[2], strict=False) else 1)' "$1" "$2"; }
 
 # ------------------------------------------------------------------ init-env --
@@ -127,18 +139,18 @@ for line in sys.stdin:
   else
     fail "Tidak ada yang mendengarkan $DB_HOST:$DB_PORT. Jalankan deploy/server/04-mariadb-config.sh (DB_BIND=docker-gw)."
   fi
-  if ! command -v mariadb >/dev/null; then
-    warn 'client mariadb tidak ada di host; login DB tidak diuji.'
-  elif ! ip -o -4 addr show | grep -q " $DB_HOST/"; then
-    warn "Login DB diuji saat up: $DB_HOST baru ada setelah network $SLIMS_NETWORK dibuat."
+  if ! docker network inspect "$SLIMS_NETWORK" >/dev/null 2>&1; then
+    warn "Login DB diuji saat up: network $SLIMS_NETWORK belum ada."
+  elif ! pull_db_client; then
+    fail "image klien DB $DB_CLIENT_IMAGE gagal diunduh (cek koneksi ke Docker Hub)"
   else
     local n
     if n="$(db_tables)"; then
-      same "login $DB_USER@$DB_HOST ke $DB_NAME berhasil"
+      same "login $DB_USER@$DB_HOST ke $DB_NAME dari $SLIMS_NETWORK berhasil"
       if [[ "$n" -gt 0 ]]; then same "skema SLiMS: $n tabel"
       else plan "muat skema $SCHEMA ke $DB_NAME (database masih kosong)"; fi
     else
-      fail "login $DB_USER@$DB_HOST gagal: $(head -n1 "$TMPE")"
+      fail "login $DB_USER@$DB_HOST dari $SLIMS_NETWORK gagal: $(db_err)"
     fi
   fi
 
@@ -176,15 +188,12 @@ up() {
       -o "com.docker.network.bridge.name=$SLIMS_BRIDGE" "$SLIMS_NETWORK" >/dev/null
     ok "network $SLIMS_NETWORK dibuat"
   fi
-  if command -v mariadb >/dev/null; then
-    local n
-    n="$(db_tables)" || die "login $DB_USER@$DB_HOST gagal: $(head -n1 "$TMPE")"
-    if [[ "$n" -eq 0 ]]; then
-      db "$DB_NAME" <"$SCHEMA" || die "gagal memuat $SCHEMA"
-      ok "skema SLiMS dimuat ke $DB_NAME ($(db_tables) tabel)"
-    fi
-  else
-    warn 'client mariadb tidak ada; pastikan skema SLiMS sudah dimuat (deploy/server/04 dengan SLIMS_SQL).'
+  pull_db_client || die "image klien DB $DB_CLIENT_IMAGE gagal diunduh (cek koneksi ke Docker Hub)."
+  local n
+  n="$(db_tables)" || die "login $DB_USER@$DB_HOST dari $SLIMS_NETWORK gagal: $(db_err)"
+  if [[ "$n" -eq 0 ]]; then
+    db "$DB_NAME" <"$SCHEMA" || die "gagal memuat $SCHEMA"
+    ok "skema SLiMS dimuat ke $DB_NAME ($(db_tables) tabel)"
   fi
   if [[ $BUILD -eq 1 ]] || ! docker image inspect "$SLIMS_IMAGE" >/dev/null 2>&1; then dc build; fi
   dc up -d --no-build
