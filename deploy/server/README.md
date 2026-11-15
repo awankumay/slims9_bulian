@@ -89,6 +89,7 @@ SLiMS (dari `slims9_bulian/deploy/production`):
 
 ```bash
 sudo ./slims-prod.sh init-env    # .env dari .env.example + password dari /root/db-credentials.env
+                                 # (lokasi lain: sudo ./slims-prod.sh init-env /opt/secrets/db-credentials.env)
 ./slims-prod.sh check            # periksa (alias --dry-run): exit 0 sesuai, 2 ada perubahan, 1 gagal
 ./slims-prod.sh up               # buat network, muat skema bila DB kosong, jalankan container
 curl -I http://127.0.0.1:8881/
@@ -163,7 +164,7 @@ jalan bila UFW belum aktif (kecuali `DB_BIND="docker-gw"`). Semua script aman di
 
 | Lokasi | Isi |
 | --- | --- |
-| `/root/db-credentials.env` | Nama DB, user, password EPrints dan SLiMS (hanya root) |
+| `/root/db-credentials.env` (`DB_CRED_FILE`) | Nama DB, user, password EPrints dan SLiMS (root:root 600). Bisa dipindah lewat `DB_CRED_FILE` di `server.env`, lihat di bawah |
 | `/var/backups/mariadb/` | Dump harian `eprints-*`, `senayan-*`, `mysql-*` (14 hari). Salin juga ke luar server |
 | `/var/log/waf/` | Log container WAF yang dibaca fail2ban (`access.log`, `error.log`, `modsec_audit.json`) |
 | `/var/log/deploy-server-apt.log` | Log apt dari script |
@@ -171,6 +172,22 @@ jalan bila UFW belum aktif (kecuali `DB_BIND="docker-gw"`). Semua script aman di
 
 Dari container, MariaDB dijangkau lewat IP gateway network Docker masing-masing:
 `192.168.121.1` (eprints-net) dan `192.168.121.33` (slims-net).
+
+### Memindahkan berkas kredensial
+
+Lokasi berkas kredensial diatur `DB_CRED_FILE` di `server.env`, mis. ke `/opt/secrets/` bila
+semua berkas deploy ditaruh di `/opt`. Lokasi tidak mengubah keamanannya: yang menjaga adalah
+izin `root:root 600` (folder `700`). Siapa pun yang punya `sudo` atau masuk grup `docker`
+tetap bisa membacanya, jadi batasi kedua akses itu untuk vendor lain.
+
+Bila berkas sudah pernah dibuat di `/root`, pindahkan dulu; `04` berhenti dan menampilkan
+perintahnya, agar tidak membuat password baru yang memutus container yang sudah jalan:
+
+```bash
+install -d -m 700 /opt/secrets && mv /root/db-credentials.env /opt/secrets/db-credentials.env
+sed -i 's|^DB_CRED_FILE=.*|DB_CRED_FILE="/opt/secrets/db-credentials.env"|' server.env   # atau tambahkan barisnya
+sudo ./04-mariadb-config.sh --dry-run    # harus "sesuai", tanpa password baru
+```
 
 ## Saat rilis publik
 

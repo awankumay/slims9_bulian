@@ -10,7 +10,14 @@
 source "$(dirname "$0")/lib.sh"
 parse_args "$@"; need_root "$@"; load_env
 ROTATE=0; has_arg --rotate && ROTATE=1
-CRED=/root/db-credentials.env
+CRED="$DB_CRED_FILE"
+[[ "$CRED" == /* && "$CRED" != */ ]] || die "DB_CRED_FILE harus path absolut ke berkas: $CRED"
+# Berkas lama di lokasi default dipindah dulu, bukan dibuat ulang: tanpa password lama,
+# 04 akan membuat password baru dan container yang sudah jalan kehilangan akses DB.
+OLD_CRED=/root/db-credentials.env
+if [[ "$CRED" != "$OLD_CRED" && -s "$OLD_CRED" && ! -e "$CRED" ]]; then
+  die "Kredensial lama ada di $OLD_CRED. Pindahkan dulu: install -d -m 700 $(dirname "$CRED") && mv $OLD_CRED $CRED"
+fi
 
 db_up=0
 if command -v mariadb >/dev/null && mariadb -e 'SELECT 1' >/dev/null 2>&1; then db_up=1
@@ -78,7 +85,13 @@ fi
 step 'Database dan user aplikasi'
 [[ "$EPRINTS_DB_NAME$EPRINTS_DB_USER$SLIMS_DB_NAME$SLIMS_DB_USER" =~ ^[A-Za-z0-9_]+$ ]] \
   || die 'Nama database/user hanya boleh huruf, angka, dan _.'
-if [[ $DRY_RUN -eq 0 ]]; then touch "$CRED"; chmod 600 "$CRED"; fi
+cred_dir="$(dirname "$CRED")"
+if [[ -d "$cred_dir" ]]; then
+  [[ "$(stat -c '%U' "$cred_dir")" == root ]] || warn "$cred_dir bukan milik root; user pemiliknya bisa mengganti berkas kredensial."
+else
+  plan "buat folder $cred_dir (700, root)"; run install -d -m 700 -o root -g root "$cred_dir"
+fi
+if [[ $DRY_RUN -eq 0 ]]; then touch "$CRED"; chown root:root "$CRED"; chmod 600 "$CRED"; fi
 cred_get() { [[ -f "$CRED" ]] && sed -n "s/^$1=//p" "$CRED" | tail -n1; return 0; }
 cred_set() { sed -i "/^$1=/d" "$CRED"; echo "$1=$2" >>"$CRED"; }
 q() { mariadb -N -e "$1"; }
