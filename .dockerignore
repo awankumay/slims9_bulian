@@ -38,3 +38,6 @@ backups
 
 # Script setup server (dijalankan di host, bukan bagian image)
 deploy
+
+# Data dan skrip penerapan per klien (customer/, tidak di-commit; berisi data pribadi)
+customer
