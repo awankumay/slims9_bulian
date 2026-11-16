@@ -77,3 +77,6 @@ tarsius
 
 # Konfigurasi lokal script setup server
 deploy/server/server.env
+
+# Data dan skrip penerapan per klien (berisi data pribadi, jangan di-commit)
+customer/
