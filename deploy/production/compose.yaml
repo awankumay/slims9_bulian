@@ -1,4 +1,4 @@
-# SLiMS production: MariaDB di host (deploy/server/04-mariadb-config.sh), container
+# SLiMS production: MariaDB di host (pusdatin-server/04-mariadb-config.sh), container
 # di network slims-net dengan subnet tetap, di-hardening, dan resource dibatasi.
 # Jalankan lewat ./slims-prod.sh (check = dry-run, up, down, status, logs).
 # Network slims-net dibuat oleh slims-prod.sh (external), agar container WAF bisa
