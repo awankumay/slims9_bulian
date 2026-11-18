@@ -63,8 +63,8 @@ if ($_SESSION['uid'] == 1 && config('init_info') === null) {
     ])->run();
 }
 
-// page title
-$page_title = $sysconf['library_name'] . ' | ' . __('Senayan Library Management System');
+// page title: sama dengan OPAC (index.php), ditandai Admin
+$page_title = $sysconf['library_subname'] . ' | ' . $sysconf['library_name'] . ' · Admin';
 // main menu
 $module = new module();
 $module->setModulesDir(MDLBS);
