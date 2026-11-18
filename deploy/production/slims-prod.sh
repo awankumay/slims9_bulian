@@ -6,7 +6,7 @@
 #                                    alias --dry-run; exit 0 sesuai, 2 ada perubahan,
 #                                    1 pra-syarat gagal)
 #        sudo ./slims-prod.sh init-env [FILE]   buat .env dari .env.example + kredensial
-#                                    (FILE default: DB_CRED_FILE atau /root/db-credentials.env)
+#                                    (FILE default: DB_CRED_FILE atau /opt/secrets/db-credentials.env)
 #        ./slims-prod.sh up [--build]   buat network, jalankan container (image di-build
 #                                    bila belum ada; --build untuk build ulang)
 #        ./slims-prod.sh down        hentikan container (volume dan network tetap)
@@ -14,7 +14,7 @@
 set -Eeuo pipefail
 cd "$(dirname "$0")"
 ENV_FILE="$PWD/.env"
-CRED="${DB_CRED_FILE:-/root/db-credentials.env}"
+CRED="${DB_CRED_FILE:-/opt/secrets/db-credentials.env}"
 
 if [[ -t 1 ]]; then B=$'\e[1m'; G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; C=$'\e[36m'; N=$'\e[0m'; else B=''; G=''; Y=''; R=''; C=''; N=''; fi
 step() { printf '\n%s==> %s%s\n' "$B$C" "$*" "$N"; }

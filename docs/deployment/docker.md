@@ -92,7 +92,7 @@ server production yang memakai MariaDB di host (`pusdatin-server/03` dan `04`), 
 
 ```bash
 cd deploy/production
-sudo ./slims-prod.sh init-env   # .env dari .env.example + SLIMS_DB_* dari /root/db-credentials.env
+sudo ./slims-prod.sh init-env   # .env dari .env.example + SLIMS_DB_* dari /opt/secrets/db-credentials.env
 ./slims-prod.sh check           # periksa tanpa mengubah apa pun (alias --dry-run)
 ./slims-prod.sh up              # buat network slims-net, muat skema bila DB kosong, jalankan
 ./slims-prod.sh status          # status + pemakaian CPU/RAM
