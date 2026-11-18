@@ -22,6 +22,10 @@ RUN rm -rf /var/lib/apt/lists/*
 
 RUN a2enmod rewrite headers remoteip
 
+# Zona waktu container, Apache log dan PHP (date.timezone = ${TZ} di zz-slims.ini).
+# Ganti lewat environment TZ bila perlu.
+ENV TZ=Asia/Jakarta
+
 COPY docker/php/zz-slims.ini /usr/local/etc/php/conf.d/zz-slims.ini
 COPY docker/apache/slims-security.conf /etc/apache2/conf-available/slims-security.conf
 RUN a2enconf slims-security

@@ -14,6 +14,7 @@ config/env.php
 config/csp.php
 config/auth.php
 config/captcha.php
+config/url.php
 
 # Built on image build from composer.lock
 vendor
@@ -38,3 +39,6 @@ backups
 
 # Script setup server (dijalankan di host, bukan bagian image)
 deploy
+
+# Data dan skrip penerapan per klien (customer/, tidak di-commit; berisi data pribadi)
+customer

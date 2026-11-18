@@ -75,7 +75,6 @@ if (isset($_POST['saveData'])) {
         }
         
     } catch (Exception $e) {
-        dd($e->getMessage());
         writeLog('staff', $_SESSION['uid'], 'system', $_SESSION['realname'] . ', register site : ' . $e->getMessage(), 'Logo', 'Delete');
         toastr(__('Failed to register your site. Open system log for more info'))->error();
     }

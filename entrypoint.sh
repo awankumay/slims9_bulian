@@ -59,6 +59,16 @@ for name in csp auth; do
     fi
 done
 
+# Behind the WAF the container only sees plain HTTP, and SLiMS ignores
+# X-Forwarded-Proto, so absolute URLs (OAI-PMH, redirects, share links) would
+# use http://. FORCE_HTTPS=1 makes SLiMS build https:// URLs.
+case "${FORCE_HTTPS}" in
+    1|true)
+        printf "<?php\nreturn ['base' => '', 'force_https' => true];\n" > "$CONFIG_DIR/url.php"
+        echo "Configuration written: config/url.php (force_https)"
+        ;;
+esac
+
 # The files volume keeps whatever the first image put in it, so member card
 # templates (PHP code) would never be updated and stay writable by www-data.
 # Refresh them from this image and keep them root-owned. Extra files added to
@@ -68,10 +78,18 @@ cp -a /usr/src/slims-membercard/. "$APP_DIR/files/membercard/"
 chown -R root:root "$APP_DIR/files/membercard"
 chmod -R go-w "$APP_DIR/files/membercard"
 
-# Behind Cloudflare Tunnel every request comes from cloudflared. Take the client
-# IP from CF-Connecting-IP, but only from the trusted proxy address, so the
+# Behind Cloudflare Tunnel or the WAF every request comes from the proxy. Take
+# the client IP from TRUSTED_PROXY_HEADER (CF-Connecting-IP for the tunnel,
+# X-Forwarded-For for the WAF), but only from the trusted proxy address, so the
 # header cannot be spoofed through the published HTTP port.
 REMOTEIP_CONF=/etc/apache2/conf-enabled/zz-remoteip.conf
+TRUSTED_PROXY_HEADER="${TRUSTED_PROXY_HEADER:-CF-Connecting-IP}"
+case "${TRUSTED_PROXY_HEADER}" in
+    *[!A-Za-z0-9-]*|"")
+        echo "ERROR: TRUSTED_PROXY_HEADER must be a header name, got: ${TRUSTED_PROXY_HEADER}" >&2
+        exit 1
+        ;;
+esac
 case "${TRUSTED_PROXY}" in
     "") rm -f "$REMOTEIP_CONF" ;;
     *[!0-9A-Fa-f.:/\ ]*)
@@ -79,8 +97,8 @@ case "${TRUSTED_PROXY}" in
         exit 1
         ;;
     *)
-        printf 'RemoteIPHeader CF-Connecting-IP\nRemoteIPInternalProxy %s\n' "$TRUSTED_PROXY" > "$REMOTEIP_CONF"
-        echo "Client IP taken from CF-Connecting-IP when sent by: ${TRUSTED_PROXY}"
+        printf 'RemoteIPHeader %s\nRemoteIPInternalProxy %s\n' "$TRUSTED_PROXY_HEADER" "$TRUSTED_PROXY" > "$REMOTEIP_CONF"
+        echo "Client IP taken from ${TRUSTED_PROXY_HEADER} when sent by: ${TRUSTED_PROXY}"
         ;;
 esac
 
