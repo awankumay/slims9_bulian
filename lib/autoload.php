@@ -86,6 +86,8 @@ foreach ($namespaces as $namespace => $classpaths) {
 include "ezyang/htmlpurifier/library/HTMLPurifier.auto.php";
 // Symfony
 include "symfony/polyfill-mbstring/bootstrap.php";
+// trigger_deprecation(), called by Guzzle 7.11+ (e.g. lowercase HTTP methods)
+include "symfony/deprecation-contracts/function.php";
 // Nesbot legacy function
 include "nesbot/carbon/legacy.func.php";
 // Var-dumper
