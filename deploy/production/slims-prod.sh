@@ -66,7 +66,7 @@ init_env() {
   [[ -f "$ENV_FILE" ]] && die ".env sudah ada; tidak diubah. Hapus dulu bila ingin membuat ulang."
   [[ -n "${2:-}" ]] && CRED="$2"
   [[ $EUID -eq 0 ]] || die "Jalankan dengan sudo (membaca $CRED)."
-  [[ -r "$CRED" ]] || die "$CRED tidak ada. Jalankan deploy/server/04-mariadb-config.sh dulu."
+  [[ -r "$CRED" ]] || die "$CRED tidak ada. Jalankan pusdatin-server/04-mariadb-config.sh dulu."
   local pass name user
   pass="$(sed -n 's/^SLIMS_DB_PASS=//p' "$CRED" | tail -n1)"
   name="$(sed -n 's/^SLIMS_DB_NAME=//p' "$CRED" | tail -n1)"
@@ -137,7 +137,7 @@ for line in sys.stdin:
   if ss -ltn 2>/dev/null | awk '{print $4}' | grep -qE "^($DB_HOST|0\.0\.0\.0|\*):$DB_PORT$"; then
     same "MariaDB mendengarkan $DB_HOST:$DB_PORT"
   else
-    fail "Tidak ada yang mendengarkan $DB_HOST:$DB_PORT. Jalankan deploy/server/04-mariadb-config.sh (DB_BIND=docker-gw)."
+    fail "Tidak ada yang mendengarkan $DB_HOST:$DB_PORT. Jalankan pusdatin-server/04-mariadb-config.sh (DB_BIND=docker-gw)."
   fi
   if ! docker network inspect "$SLIMS_NETWORK" >/dev/null 2>&1; then
     warn "Login DB diuji saat up: network $SLIMS_NETWORK belum ada."

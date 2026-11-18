@@ -82,12 +82,12 @@ Jika sesi login harus hanya lewat HTTPS, tambahkan `session.cookie_secure = 1` d
 
 ## Menyiapkan server production
 
-Sebelum container dipasang di VPS Ubuntu 26.04, gunakan script di `deploy/server/`: hardening dan SSH key-only, firewall UFW (termasuk aturan `DOCKER-USER`, karena port yang di-publish Docker melewati UFW), MariaDB standalone di host, dan fail2ban untuk log WAF. Setiap script punya mode `--dry-run` (alias `--check`), dan `check-all.sh` memeriksa semuanya tanpa mengubah apa pun. Lihat [`deploy/server/README.md`](../../deploy/server/README.md).
+Sebelum container dipasang di VPS Ubuntu 26.04, gunakan script di repo [`pusdatin-server`](https://github.com/awankumay/pusdatin-server) (private, dipakai bersama EPrints): hardening dan SSH key-only, firewall UFW (termasuk aturan `DOCKER-USER`, karena port yang di-publish Docker melewati UFW), MariaDB standalone di host, dan fail2ban untuk log WAF. Setiap script punya mode `--dry-run` (alias `--check`), dan `check-all.sh` memeriksa semuanya tanpa mengubah apa pun. Lihat README repo tersebut.
 
 ### SLiMS di server production: `deploy/production/`
 
 `compose.yaml` di root repo menjalankan SLiMS beserta container MariaDB-nya sendiri. Untuk
-server production yang memakai MariaDB di host (`deploy/server/03` dan `04`), pakai
+server production yang memakai MariaDB di host (`pusdatin-server/03` dan `04`), pakai
 [`deploy/production/`](../../deploy/production/):
 
 ```bash
