@@ -26,6 +26,8 @@ services:
       # IP asli pengunjung diambil dari header ini, hanya bila datang dari WAF.
       TRUSTED_PROXY: ${TRUSTED_PROXY:-192.168.121.34}
       TRUSTED_PROXY_HEADER: ${TRUSTED_PROXY_HEADER:-X-Forwarded-For}
+      # Pengunjung masuk lewat HTTPS di WAF; URL absolut SLiMS ikut https://.
+      FORCE_HTTPS: ${FORCE_HTTPS:-1}
     volumes:
       - files:/var/www/html/files
       - images:/var/www/html/images

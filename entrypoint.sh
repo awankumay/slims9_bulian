@@ -59,6 +59,16 @@ for name in csp auth; do
     fi
 done
 
+# Behind the WAF the container only sees plain HTTP, and SLiMS ignores
+# X-Forwarded-Proto, so absolute URLs (OAI-PMH, redirects, share links) would
+# use http://. FORCE_HTTPS=1 makes SLiMS build https:// URLs.
+case "${FORCE_HTTPS}" in
+    1|true)
+        printf "<?php\nreturn ['base' => '', 'force_https' => true];\n" > "$CONFIG_DIR/url.php"
+        echo "Configuration written: config/url.php (force_https)"
+        ;;
+esac
+
 # The files volume keeps whatever the first image put in it, so member card
 # templates (PHP code) would never be updated and stay writable by www-data.
 # Refresh them from this image and keep them root-owned. Extra files added to
