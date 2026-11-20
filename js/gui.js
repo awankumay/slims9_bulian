@@ -826,8 +826,11 @@ $(() => {
   });
 
   // Enhanced AJAX loaded event handler
-  $container.not('#sidepan').on('simbioAJAXloaded', function() {
-    const $loaded = $(this);
+  $container.not('#sidepan').on('simbioAJAXloaded', function(evt) {
+    // Event dari container bersarang (loadcontainer, mis. Remove Image di #imageFilename)
+    // ikut bubble ke #mainContent; mendaftar ulang seluruh #mainContent men-disable lagi
+    // form edit yang sedang dibuka. Cukup daftarkan konten yang baru dimuat.
+    const $loaded = $(evt.target);
     
     // Register admin events
     $loaded.registerAdminEvents();
