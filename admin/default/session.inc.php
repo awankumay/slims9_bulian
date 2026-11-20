@@ -26,9 +26,28 @@ use SLiMS\Session\Factory as SessionFactory;
 use SLiMS\Session\Driver\Files;
 
 // be sure that this file not accessed directly
-if (INDEX_AUTH != 1) { 
+if (INDEX_AUTH != 1) {
     die("can not access this file directly");
 }
+
+require_once __DIR__ . '/origin_check.inc.php';
+// Mode awal hanya mencatat ke error_log (docker logs). Ubah ke true setelah log bersih.
+$adminOriginCheckEnforce = false;
+$adminForeignReason = adminForeignRequestReason($_SERVER);
+if ($adminForeignReason !== '') {
+    error_log(sprintf('[admin-origin-check] %s %s %s (%s) referer=%s',
+        $adminOriginCheckEnforce ? 'BLOCK' : 'REPORT',
+        $_SERVER['REQUEST_METHOD'] ?? '-',
+        strtok($_SERVER['REQUEST_URI'] ?? '-', '?'),
+        $adminForeignReason,
+        parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_HOST) ?: '-'
+    ));
+    if ($adminOriginCheckEnforce) {
+        http_response_code(403);
+        exit('Request ditolak: asal request tidak sah.');
+    }
+}
+unset($adminForeignReason, $adminOriginCheckEnforce);
 
 // Cleanup SQL Injection and Common XSS
 $sanitizer->cleanUp(
