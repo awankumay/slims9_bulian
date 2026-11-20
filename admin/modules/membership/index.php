@@ -662,7 +662,9 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     $str_input .= '</div>';
     
     $str_input .= '<div class="custom-file col-4">';
-    $str_input .= simbio_form_element::textField('file', 'image_file_input', '', 'id="image_file_input" class="custom-file-input" accept="'.implode(',', $sysconf['allowed_images']).'"');
+    // Tanpa atribut name: server memakai hasil crop di base64picstring. File mentah (MB-an)
+    // ikut terkirim bila diberi name, dan ditolak F5 proxy Infra sehingga loader macet.
+    $str_input .= '<input type="file" id="image_file_input" class="custom-file-input" accept="'.implode(',', $sysconf['allowed_images']).'">';
     $str_input .= '<label class="custom-file-label" for="image_file_input">Choose file</label>';
     $str_input .= '</div>';
     $str_input .= ' <div class="mt-2 ml-2">Maximum '.$sysconf['max_image_upload'].' KB</div>';
