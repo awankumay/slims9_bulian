@@ -258,6 +258,21 @@ jQuery.fn.registerAdminEvents = function(params) {
     return true;
   });
 
+  // Respons submitExec yang hanya toastr, error PHP, atau halaman blokir proxy tidak
+  // memicu AJAX berikutnya, jadi loader harus ditutup saat iframe selesai dimuat.
+  // Di production iframe hanya punya name (id hanya ada di mode development).
+  $container.find('iframe[name="submitExec"]').off('load.loader').on('load.loader', function() {
+    $('.loader').hide();
+    try {
+      const doc = this.contentDocument;
+      if (doc && doc.title === 'Request Rejected' && window.toastr) {
+        window.toastr.error(doc.body.innerText.trim(), 'Request Rejected');
+      }
+    } catch (error) {
+      console.warn('Cannot access iframe content:', error);
+    }
+  });
+
   // Enhanced iframe debug handler
   const iframe = $container.find('iframe#submitExec')[0];
   if (iframe) {

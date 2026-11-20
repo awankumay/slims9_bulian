@@ -120,7 +120,10 @@ if (isset($_POST['removeImage']) && isset($_POST['uimg']) && isset($_POST['img']
       if (!empty($postImage) && $imageDisk->isExists($imagePath)) {
         @$imageDisk->delete($imagePath);
       }
-      exit('<script type="text/javascript">alert(\''.str_replace('{imageFilename}', $postImage, __('{imageFilename} successfully removed!')).'\'); $(\'#userImage, #imageFilename\').remove();</script>');
+      // Respons ini mengisi #imageFilename; #current_image_preview harus tetap ada
+      // agar preview reupload di form yang sama bisa tampil.
+      echo '<img src="'.SWB.'images/persons/person.png?'.date('this').'" class="img-fluid rounded" id="current_image_preview" alt="Image cover">';
+      exit('<script type="text/javascript">alert(\''.str_replace('{imageFilename}', htmlspecialchars($postImage, ENT_QUOTES, 'UTF-8'), __('{imageFilename} successfully removed!')).'\'); $(\'#userImage\').remove();</script>');
     }
   }
   exit();
@@ -487,7 +490,9 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     $str_input .= '</div>';
     
     $str_input .= '<div class="custom-file col-4">';
-    $str_input .= simbio_form_element::textField('file', 'image', '', 'id="image" class="custom-file-input" accept="'.implode(',', $sysconf['allowed_images']).'"');
+    // Tanpa atribut name: server memakai hasil crop di base64picstring. File mentah
+    // berisi byte NUL ditolak F5 proxy Infra sehingga loader macet (sama dengan membership).
+    $str_input .= '<input type="file" id="image" class="custom-file-input" accept="'.implode(',', $sysconf['allowed_images']).'">';
     $str_input .= '<label class="custom-file-label" for="image">'.__('Choose file').'</label>';
     $str_input .= '</div>';
     $str_input .= ' <div class="mt-2 ml-2">'.__('Maximum').' '.$sysconf['max_image_upload'].' KB</div>';
