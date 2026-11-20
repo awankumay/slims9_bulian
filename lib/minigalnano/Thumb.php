@@ -181,7 +181,10 @@ class Thumb
      */
     public function isCacheExists()
     {
-        return file_exists($this->cache['file']);
+        // Kunci cache hanya resolusi + nama file; tanpa cek mtime, file yang di-reupload
+        // dengan nama sama (mis. member_<id>.jpeg) tetap menampilkan thumbnail lama.
+        return file_exists($this->cache['file'])
+            && filemtime($this->cache['file']) >= $this->storage->lastModified($this->filePath);
     }
 
     /**
