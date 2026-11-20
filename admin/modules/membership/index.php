@@ -93,7 +93,10 @@ if (isset($_POST['removeImage']) && isset($_POST['mimg']) && isset($_POST['img']
                 @Storage::images()->delete($imagePath);
             }
             $safePostImage = htmlspecialchars($postImage, ENT_QUOTES, 'UTF-8');
-            exit('<script type="text/javascript">alert(\''.str_replace('{imageFilename}', $safePostImage, __('{imageFilename} successfully removed!')).'\'); $(\'#memberImage, #imageFilename\').remove();</script>');
+            // Respons ini mengisi #imageFilename; #current_image_preview harus tetap ada
+            // agar preview reupload di form yang sama bisa tampil.
+            echo '<img src="'.SWB.'images/persons/person.png?'.date('this').'" class="img-fluid rounded" id="current_image_preview" alt="Image cover">';
+            exit('<script type="text/javascript">alert(\''.str_replace('{imageFilename}', $safePostImage, __('{imageFilename} successfully removed!')).'\'); $(\'#memberImage\').remove();</script>');
         }
     }
     exit();
