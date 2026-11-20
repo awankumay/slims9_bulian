@@ -266,7 +266,7 @@ jQuery.fn.registerAdminEvents = function(params) {
     try {
       const doc = this.contentDocument;
       if (doc && doc.title === 'Request Rejected' && window.toastr) {
-        window.toastr.error(doc.body.innerText.trim(), 'Request Rejected');
+        window.toastr.error(doc.body.innerText.trim(), 'Request Rejected', { escapeHtml: true });
       }
     } catch (error) {
       console.warn('Cannot access iframe content:', error);

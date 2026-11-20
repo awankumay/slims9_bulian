@@ -77,7 +77,7 @@ if (version_compare(phpversion(), '5.4', '<')) {
 }
 
 /* REMOVE IMAGE */
-if (isset($_POST['removeImage']) && isset($_POST['mimg']) && isset($_POST['img'])) {
+if (isset($_POST['removeImage']) && isset($_POST['mimg']) && isset($_POST['img']) && $can_write) {
     // validate post image
     $member_id = utility::filterData('mimg', 'post', true, true, true);
     $image_name = utility::filterData('img', 'post', true, true, true);
@@ -240,6 +240,16 @@ if (isset($_POST['saveData']) && $can_read && $can_write) {
         }
 
         $imageDisk = Storage::images();
+        // Member ID dipakai sebagai nama file; tanpa sanitasi "../" atau "\" bisa menulis
+        // di luar images/persons (Flysystem menormalkan "\" menjadi "/").
+        $imageBaseName = 'member_'.preg_replace('/[^A-Za-z0-9_-]/', '_', $memberID);
+        // Nama foto lama diambil dari DB, bukan dari POST: nilai "." / ".." dari form
+        // membuat delete() menghapus seluruh folder images.
+        $old_member_image = '';
+        if (isset($_POST['updateRecordID'])) {
+            $old_q = $dbs->query(sprintf("SELECT member_image FROM member WHERE member_id='%s'", $dbs->escape_string(trim($_POST['updateRecordID']))));
+            $old_member_image = basename((string)($old_q ? ($old_q->fetch_row()[0] ?? '') : ''));
+        }
         $base64_data = null;
         $file_extension = 'jpg';
         if (!empty($_POST['base64picstring'])) {
@@ -270,12 +280,12 @@ if (isset($_POST['saveData']) && $can_read && $can_write) {
             $mimeAllowed = $fileMime && in_array($fileMimeLower, $allowedMimes, true);
             $extAllowed = $file_extension && in_array($file_extension, $allowedExts, true);
             $valid = $fileinfo && $fileSizeOkay && $mimeAllowed && $mimeAllowed;
-            $new_filename = 'member_'.$data['member_id'].'.'.$file_extension;
+            $new_filename = $imageBaseName.'.'.$file_extension;
             if ($valid) {
                 $imageDisk->put('persons/'.$new_filename, $filedata);
                 if ($imageDisk->isExists('persons/'.$new_filename)) {
-                    if (isset($_POST['old_member_image']) && !empty($_POST['old_member_image']) && $_POST['old_member_image'] != $new_filename) {
-                        @$imageDisk->delete('persons/'.$_POST['old_member_image']);
+                    if (!in_array($old_member_image, ['', '.', '..'], true) && $old_member_image != $new_filename) {
+                        @$imageDisk->delete('persons/'.$old_member_image);
                     }
                     
                     $data['member_image'] = $dbs->escape_string($new_filename);
@@ -300,7 +310,7 @@ if (isset($_POST['saveData']) && $can_read && $can_write) {
                 if (!empty($image->getError())) $image->destroyIfFailed();
                 // remove exif from image
                 if (empty($image->getError())) $image->cleanExifInfo();
-            })->as('persons/' . 'member_'.$data['member_id']);
+            })->as('persons/' . $imageBaseName);
             if ($upload->getUploadStatus()) {
                 $data['member_image'] = $dbs->escape_string($upload->getUploadedFileName());
                 if (!defined('UPLOAD_SUCCESS')) define('UPLOAD_SUCCESS', 1);
@@ -573,7 +583,6 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
             $form->addCheckBox('extend', __('Extend Membership'), $chbox_array);
             $expired_message = '<strong class="text-danger">('.__('Membership Already Expired').')</strong>';
         }
-        $form->addHidden('old_member_image', $rec_d['member_image'] ?? ''); 
     }
 
     // include custom fields file
