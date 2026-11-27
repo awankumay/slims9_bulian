@@ -125,7 +125,14 @@ class Mail extends PHPMailer
         $this->isHTML(true); // html yes!
         $this->msgHTML($template->render());
         if (is_object($template->render())) $this->AltBody = $template->render()->asAltBody();
-        
+
+        // Header logo as an inline (CID) image: no public URL needed, and shown
+        // without "download pictures". Skipped if already embedded (singleton reuse).
+        $logo = SB . TemplateContract::LOGO_FILE;
+        if (str_contains($this->Body, 'cid:' . TemplateContract::LOGO_CID) && file_exists($logo) && !$this->inlineImageExists()) {
+            $this->addEmbeddedImage($logo, TemplateContract::LOGO_CID, 'logo.png', PHPMailer::ENCODING_BASE64, 'image/png');
+        }
+
         return $this;
     }
 

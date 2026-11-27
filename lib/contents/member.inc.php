@@ -650,7 +650,7 @@ if ($is_member_login) :
 
             // CC
             $mail->addCC($_SESSION['m_email'], $_SESSION['m_name']);
-            $mail->subject('Reservation request from Member ' . $_SESSION['m_name'] . ' (' . $_SESSION['m_email'] . ')')
+            $mail->subject('Permintaan reservasi dari ' . $_SESSION['m_name'] . ' (' . $_SESSION['mid'] . ')')
                  ->loadTemplate($reserveTemplate)
                  ->send();
 

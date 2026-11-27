@@ -15,72 +15,31 @@ class reserveMail extends TemplateContract
 {
     public function render()
     {
-         // date
-         $_curr_date = date('Y-m-d H:i:s');
-
-        $ids = [];
-        foreach ($_SESSION['m_mark_biblio'] as $id) {
-            $ids[] = (integer)$id;
-        }
-
+        $ids = array_map('intval', $_SESSION['m_mark_biblio']);
         if (count($ids) === 0) throw new Exception("Biblio basket is empty!");
-        $ids = '(' . implode(',', $ids) . ')';
 
-        // query
-        $biblioStatement = DB::getInstance()->query("SELECT biblio_id, title, image FROM biblio WHERE biblio_id IN $ids");
-         
+        $biblioStatement = DB::getInstance()->query('SELECT biblio_id, title, image FROM biblio WHERE biblio_id IN (' . implode(',', $ids) . ')');
         if ($biblioStatement->rowCount() === 0) throw new Exception("Biblio data not found!");
 
-        $reserveData = '';
-        while ($biblioData = $biblioStatement->fetchObject()) {
-            // Get cover url
-            $bookCover = $this->generateCoverUrl($biblioData->image);
-            
-            // Concating loanData variable
-            $reserveData .= <<<HTML
-            <tr>
-                <td>
-                    <img style="width: 100px; margin-right: 1em; border-radius: 5px;" src="{$bookCover}">
-                </td>
-                <td valign="top">
-                    <h2 style="margin: 0; display: block">{$biblioData->title}</h2>
-                </td>
-            </tr>
-            HTML;
+        $items = '';
+        while ($biblio = $biblioStatement->fetchObject()) {
+            $items .= $this->itemCard($this->generateCoverUrl($biblio->image), $biblio->title, []);
         }
 
-        // library name
-        $libraryName = config('library_name');
+        $field = fn($label, $value) => '<td valign="top" width="50%" style="padding:0 16px 10px 0;font-size:14px;"><div style="font-size:12px;color:#55566A;">' . $label . '</div>' . $value . '</td>';
+        $member = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E4E5EC;margin:0 0 16px 0;"><tr><td style="padding:16px 0 6px 16px;">'
+            . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+            . '<tr>' . $field('Anggota', '<strong>' . $this->e($_SESSION['m_name']) . '</strong>') . $field('ID anggota', $this->e($_SESSION['mid'])) . '</tr>'
+            . '<tr>' . $field('Email anggota', $this->e($_SESSION['m_email'])) . $field('Tanggal permintaan', date('Y-m-d H:i') . ' WIB') . '</tr>'
+            . '</table></td></tr></table>';
 
-        // Institution logo
-        $logo = '';
-        if (!$this->isLocal() && file_exists(SB . 'images/default/' . config('logo_image', 'notfound.png')))
-        {
-            $url = 'https://' . $_SERVER['SERVER_NAME'] . SWB . 'images/default/' . config('logo_image', 'notfound.png');
-            $logo = '<img src="'.$url.'" style="width: 60px; height: 60px"/>';
-        }
+        $body = $member
+            . '<p style="margin:0 0 16px 0;">Koleksi yang direservasi:</p>'
+            . $items
+            . $this->note('Untuk anggota: salinan email ini adalah tanda terima. Petugas akan menghubungi Anda bila koleksi siap diambil.');
 
-        
-        // compile reservation data
-        $formatedTemplate = <<<HTML
-        <div style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; padding: 2em;">
-            <div style="display: block;">
-                <div style="display:">
-                    {$logo}
-                    <h2 style="padding-left: 0.3em;">{$libraryName}</h2>
-                </div>
-                <p>Member: <!--MEMBER_NAME--> (<!--MEMBER_ID-->)</p>
-                <p>Reserve Date: <!--DATE--></p>
-                <table style="display: block">
-                    {$reserveData}
-                </table>
-            </div>
-        </div>
-        HTML;
+        $this->contents = $this->layout('Permintaan reservasi koleksi', $body, 'RESERVASI', 'info');
 
-         // message
-         $this->contents = str_ireplace(array('<!--MEMBER_ID-->', '<!--MEMBER_NAME-->', '<!--DATE-->'), [$_SESSION['mid'], $_SESSION['m_name'], date('Y-m-d H:i:s')], $formatedTemplate);
-
-         return $this;
+        return $this;
     }
 }
