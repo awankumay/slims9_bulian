@@ -59,7 +59,7 @@ try {
     
     // Send email to member
     Mail::to($memberData->member_email, $memberData->member_name)
-            ->subject(str_replace(['{member_name}', '{member_email}'], [$memberData->member_name, $memberData->member_email], __('Due Date Warning for Member {member_name} ({member_email})')))
+            ->subject('Pengingat jatuh tempo peminjaman - ' . $memberData->member_name)
             ->loadTemplate($duedateTemplate)
             ->send();
     

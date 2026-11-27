@@ -35,6 +35,8 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Perpustakaan Poltekpin}
+      # Tujuan bila penerima menekan Balas; kosong = alamat pengirim.
+      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
     volumes:
       - files:/var/www/html/files
       - images:/var/www/html/images

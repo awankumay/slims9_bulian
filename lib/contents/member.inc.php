@@ -629,7 +629,11 @@ if ($is_member_login) :
 
         if (count($_SESSION['m_mark_biblio']) === 0) return ['status' => 'ERROR', 'message' => 'No Titles to reserve'];
         
-        $mail = \SLiMS\Mail::to(config('mail.from'), config('mail.from_name'));
+        // Sent to the library mailbox (reply_to), not to "from": with a no-reply
+        // sender nobody reads "from". Staff replies go to the member.
+        $mail = \SLiMS\Mail::to(config('mail.reply_to') ?: config('mail.from'), config('mail.reply_to_name') ?: config('mail.from_name'));
+        $mail->clearReplyTos();
+        $mail->addReplyTo($_SESSION['m_email'], $_SESSION['m_name']);
 
         try {
             // additional recipient
@@ -646,7 +650,7 @@ if ($is_member_login) :
 
             // CC
             $mail->addCC($_SESSION['m_email'], $_SESSION['m_name']);
-            $mail->subject('Reservation request from Member ' . $_SESSION['m_name'] . ' (' . $_SESSION['m_email'] . ')')
+            $mail->subject('Permintaan reservasi dari ' . $_SESSION['m_name'] . ' (' . $_SESSION['mid'] . ')')
                  ->loadTemplate($reserveTemplate)
                  ->send();
 

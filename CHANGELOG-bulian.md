@@ -26,6 +26,8 @@ Riwayat SLiMS upstream ada di `changes.txt`.
 - Tema `bulian-kampus`: teks tombol Bootstrap (mis. "Lihat kartu anggota", "Keluar" di area anggota) tidak lagi biru di atas biru; tautan footer "Layanan" tidak lagi 404.
 - Tema `bulian-kampus`: tombol pilihan pencarian di beranda (Pengarang, Subjek, ISBN/ISSN, Pencarian Spesifik) tidak lagi berteks putih di atas putih.
 - Tambah/ubah anggota: pesan jelas untuk nomor anggota ganda, isian terlalu panjang, dan tanggal tidak valid (sebelumnya hanya "Database insert error."). Tanggal kedaluwarsa kosong saat "Auto Set" tidak dicentang kini dihitung dari periode jenis keanggotaan. Kolom form diberi batas panjang.
+- Email keterlambatan, jatuh tempo, dan reservasi memakai satu layout (header logo, daftar koleksi, footer) berbahasa Indonesia. Logo diambil dari `images/default/logo-email.png` (PNG 120×140 atau 240×280) dan disematkan di email sebagai gambar inline, tanpa URL publik; tanpa berkas itu header tampil tanpa logo. Judul dan data anggota kini di-escape.
+- Email permintaan reservasi kini dikirim ke alamat balasan perpustakaan (`reply_to`, mis. `perpustakaan@...`), bukan ke alamat pengirim. Dengan pengirim `no-reply@`, permintaan sebelumnya masuk ke kotak yang tidak dibaca. Balasan petugas atas email ini langsung ke anggota.
 - Setelan cetak kartu anggota dari data contoh `install/` (panjang string serialisasi salah) tidak lagi membuat halaman tema kartu HTTP 500; data contohnya juga diperbaiki.
 
 ### Keamanan buku tamu (`lib/Visitor.php`)
@@ -37,6 +39,7 @@ Riwayat SLiMS upstream ada di `changes.txt`.
 - Hook plugin `MEMBER_ON_VISIT` kini menerima data anggota (sebelumnya `false`).
 
 ### Docker
+- Email SMTP lewat variabel lingkungan: bila `SMTP_HOST` diisi, entrypoint menulis `config/mail.php` dari `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM_NAME`, dan `MAIL_REPLY_TO`. Halaman E-Mail Setting tidak bisa menyimpan karena `config/` tidak bisa ditulis.
 - Script setup server production (hardening Ubuntu 26.04, UFW + `DOCKER-USER`, MariaDB host, backup harian, fail2ban untuk log WAF) dipindah ke repo terpisah [`pusdatin-server`](https://github.com/awankumay/pusdatin-server), dipakai bersama EPrints. Folder `deploy` tidak ikut ke image.
 - Header keamanan baru di image: `Strict-Transport-Security` (1 tahun, `includeSubDomains`), `Referrer-Policy: strict-origin-when-cross-origin`, dan `Permissions-Policy` (kamera hanya untuk situs sendiri; mikrofon, lokasi, pembayaran, USB, sensor gerak dimatikan). Butuh rebuild image.
 - Script operasional `setup.sh` (instalasi pertama: `.env` dengan password DB acak, build, tunggu healthy, tampilkan password admin) dan `slims.sh` (status, start/stop/restart, logs, konsol DB, backup DB, shell, update, cek header).

@@ -178,7 +178,7 @@ class member
             
             // Send email to member
             Mail::to($this->member_email, $this->member_name)
-                    ->subject(str_replace(['{member_name}', '{member_email}'], [$this->member_name, $this->member_email], __('Overdue Notice for Member {member_name} ({member_email})')))
+                    ->subject('Pemberitahuan keterlambatan pengembalian - ' . $this->member_name)
                     ->loadTemplate($overdueTemplate)
                     ->send();
             
