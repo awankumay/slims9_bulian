@@ -69,6 +69,38 @@ case "${FORCE_HTTPS}" in
         ;;
 esac
 
+# E-mail (overdue and due date notices). config/ is not a volume and is not
+# writable by www-data, so the "E-Mail Setting" page cannot save. When SMTP_HOST
+# is set, config/mail.php is written from SMTP_* instead. The password is not logged.
+if [ -n "${SMTP_HOST:-}" ]; then
+    umask 027
+    php <<'PHP'
+<?php
+$from = (string) getenv('SMTP_USER');
+$fromName = (string) (getenv('MAIL_FROM_NAME') ?: 'SLiMS');
+$mail = [
+    'debug' => 0,
+    'SMTPSecure' => (string) (getenv('SMTP_SECURE') ?: 'ssl'),
+    'enable' => true,
+    'server' => (string) getenv('SMTP_HOST'),
+    'server_port' => (int) (getenv('SMTP_PORT') ?: 465),
+    'auth_enable' => true,
+    'auth_username' => $from,
+    'auth_password' => (string) getenv('SMTP_PASS'),
+    'from' => $from,
+    'from_name' => $fromName,
+    'with_reply_to' => 0,
+    'reply_to' => $from,
+    'reply_to_name' => $fromName,
+];
+file_put_contents('/var/www/html/config/mail.php', "<?php\nreturn " . var_export($mail, true) . ";\n");
+PHP
+    umask 022
+    chown root:www-data "$CONFIG_DIR/mail.php"
+    chmod 0640 "$CONFIG_DIR/mail.php"
+    echo "Configuration written: config/mail.php (${SMTP_HOST}:${SMTP_PORT:-465})"
+fi
+
 # The files volume keeps whatever the first image put in it, so member card
 # templates (PHP code) would never be updated and stay writable by www-data.
 # Refresh them from this image and keep them root-owned. Extra files added to

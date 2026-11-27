@@ -28,6 +28,13 @@ services:
       TRUSTED_PROXY_HEADER: ${TRUSTED_PROXY_HEADER:-X-Forwarded-For}
       # Pengunjung masuk lewat HTTPS di WAF; URL absolut SLiMS ikut https://.
       FORCE_HTTPS: ${FORCE_HTTPS:-1}
+      # SMTP untuk email notifikasi; kosongkan SMTP_HOST untuk mematikan.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-ssl}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Perpustakaan Poltekpin}
     volumes:
       - files:/var/www/html/files
       - images:/var/www/html/images
