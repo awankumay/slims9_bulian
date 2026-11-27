@@ -26,6 +26,7 @@ Riwayat SLiMS upstream ada di `changes.txt`.
 - Tema `bulian-kampus`: teks tombol Bootstrap (mis. "Lihat kartu anggota", "Keluar" di area anggota) tidak lagi biru di atas biru; tautan footer "Layanan" tidak lagi 404.
 - Tema `bulian-kampus`: tombol pilihan pencarian di beranda (Pengarang, Subjek, ISBN/ISSN, Pencarian Spesifik) tidak lagi berteks putih di atas putih.
 - Tambah/ubah anggota: pesan jelas untuk nomor anggota ganda, isian terlalu panjang, dan tanggal tidak valid (sebelumnya hanya "Database insert error."). Tanggal kedaluwarsa kosong saat "Auto Set" tidak dicentang kini dihitung dari periode jenis keanggotaan. Kolom form diberi batas panjang.
+- Email keterlambatan, jatuh tempo, dan reservasi memakai satu layout (header logo, daftar koleksi, footer) berbahasa Indonesia. Logo diambil dari `images/default/logo-email.png` (PNG 120×140 atau 240×280) dan disematkan di email sebagai gambar inline, tanpa URL publik; tanpa berkas itu header tampil tanpa logo. Judul dan data anggota kini di-escape.
 - Email permintaan reservasi kini dikirim ke alamat balasan perpustakaan (`reply_to`, mis. `perpustakaan@...`), bukan ke alamat pengirim. Dengan pengirim `no-reply@`, permintaan sebelumnya masuk ke kotak yang tidak dibaca. Balasan petugas atas email ini langsung ke anggota.
 - Setelan cetak kartu anggota dari data contoh `install/` (panjang string serialisasi salah) tidak lagi membuat halaman tema kartu HTTP 500; data contohnya juga diperbaiki.
 
