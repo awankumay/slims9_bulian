@@ -78,6 +78,7 @@ if [ -n "${SMTP_HOST:-}" ]; then
 <?php
 $from = (string) getenv('SMTP_USER');
 $fromName = (string) (getenv('MAIL_FROM_NAME') ?: 'SLiMS');
+$replyTo = (string) getenv('MAIL_REPLY_TO');
 $mail = [
     'debug' => 0,
     'SMTPSecure' => (string) (getenv('SMTP_SECURE') ?: 'ssl'),
@@ -89,8 +90,8 @@ $mail = [
     'auth_password' => (string) getenv('SMTP_PASS'),
     'from' => $from,
     'from_name' => $fromName,
-    'with_reply_to' => 0,
-    'reply_to' => $from,
+    'with_reply_to' => $replyTo === '' ? 0 : 1,
+    'reply_to' => $replyTo === '' ? $from : $replyTo,
     'reply_to_name' => $fromName,
 ];
 file_put_contents('/var/www/html/config/mail.php', "<?php\nreturn " . var_export($mail, true) . ";\n");
